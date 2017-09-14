@@ -35,6 +35,7 @@
 					<li><a href="query-conceptcode">Concept Code Query</a></li>
 					<li><a href="all-sensitive-category">Sensitive Categories</a></li>
 					<li><a href="query-valueset-sensitivecategory">ValueSet Query</a></li>
+					<li><a href="query-semanticrelation">Semantic Relation Query</a></li>
 				</ul>
 			</div>
 		</div>
@@ -186,7 +187,7 @@
 							<c:forEach var="conceptCode" items="${conceptCodeModel.conceptCodes}">
 								<tr>
 									<td>${conceptCode.conceptCodeId }</td>
-									<td>${conceptCode.code }</td>
+									<td><a href="semanticRelations?terminology=${conceptCodeModel.codeSystem.name }&conceptCode=${conceptCode.code }">${conceptCode.code }</a></td>
 									<td><a href="show-valuesetby-conceptcodeid?conceptCodeId=${conceptCode.conceptCodeId }" >${conceptCode.name }</a></td>
 									<td>${conceptCode.description }</td>
 									<td>${conceptCodeModel.codeSystem.name }</td>
@@ -252,6 +253,57 @@
 			</div>
 		</c:when>
 		
+		<c:when test="${model == 'SEMANTIC_RELATION_QUERY'}">
+			<div class="container text-center">
+				<h3>Semantic Relation Query</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="show-query-semantic-relation">
+					<div class="form-group">
+						<label class="control-label col-md-3">Source Concept Code</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="sourceCode" id="sourceCode" value="" />
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3">Target Concept Code</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="targetCode" id="targetCode" value=""/>
+						</div>				
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'SEMANTIC_RELATION_VIEW' }">
+			<div class="container"></div>
+				<h3>Semantic Relation</h3>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered text-left" id="semanticRelationTable">
+						<thead>
+							<tr>
+								<th>Source Concept</th>
+								<th>Relation</th>
+								<th>Target Concept</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="RdfModelViewUnit" items="${rdfModelView.rdfViews}">
+								<tr>
+									<td>${RdfModelViewUnit.subject}</td>
+									<td>${RdfModelViewUnit.predicate}</td>
+									<td>${RdfModelViewUnit.object}</td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+				
+		</c:when>
+		
 		<c:when test="${mode == 'MODE_NEW' || mode == 'MODE_UPDATE'}">
 			<div class="container text-center">
 				<h3>Manager Task</h3>
@@ -305,6 +357,7 @@
     	$(document).ready(function() {
  	       $('#valueSetTable').DataTable();
  	       $('#sensitiveCategoryTable').DataTable();
+ 	       $('#semanticRelationTable').DataTable();
  	   } );
     </script>
 </body>

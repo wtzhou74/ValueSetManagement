@@ -16,6 +16,7 @@
   
   <properties>
   	<jena.version>3.0.0</jena.version>
+  	<java-rdfa.version>0.4.2</java-rdfa.version>
     <junit.version>3.8.1</junit.version>
     <java.version>1.8</java.version>
     <mysql.version>6.0.6</mysql.version>
@@ -23,6 +24,38 @@
   </properties>
 	
   <dependencies>
+  	<dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>apache-jena-libs</artifactId>
+      <type>pom</type>
+      <version>${jena.version}</version>
+      <exclusions>
+	  	<exclusion> 
+	      <groupId>org.slf4j</groupId>
+	      <artifactId>slf4j-log4j12</artifactId>
+	  	</exclusion>
+	  	<exclusion> 
+	      <groupId>log4j</groupId>
+	      <artifactId>log4j</artifactId>
+	  	</exclusion>
+   	   </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.jena</groupId>
+      <artifactId>jena-text</artifactId>
+      <version>${jena.version}</version>
+      <exclusions>
+	  	<exclusion> 
+	      <groupId>org.slf4j</groupId>
+	      <artifactId>slf4j-log4j12</artifactId>
+	  	</exclusion>
+	  	<exclusion> 
+	      <groupId>log4j</groupId>
+	      <artifactId>log4j</artifactId>
+	  	</exclusion>
+   	   </exclusions>
+    </dependency>
   <!-- Logging: SL4J -> Log4j -->
     <!-- <dependency>
       <groupId>org.slf4j</groupId>
@@ -72,8 +105,35 @@
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
+    
   </dependencies>
+  
+   <!-- <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+        <configuration>
+          <source>${jdk.version}</source>
+          <target>${jdk.version}</target>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-eclipse-plugin</artifactId>
+        <version>2.9</version>
+        <configuration>
+         <buildOutputDirectory>${project.build.directory}/classes</buildOutputDirectory>
+         <downloadSources>true</downloadSources>
+         <downloadJavadocs>false</downloadJavadocs>
+         <useProjectReferences>false</useProjectReferences>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build> -->
   <build>
-    <finalName>valueset</finalName>
+  	<finalName>ValueSet Management</finalName>
   </build>
 </project>

@@ -99,7 +99,7 @@ public class ValueSetService {
 	}
 	
 	/**
-	 * Find value set and sensitive category by giving a concept code ID
+	 * Find value set and sensitive category by given a concept code ID
 	 * @param conceptCodeID
 	 * @return
 	 */
