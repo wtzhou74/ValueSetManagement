@@ -25,8 +25,8 @@ public class LoadRdfModel implements CommandLineRunner{
 	
 	@Override
 	public void run(String... arg0) throws Exception {
-		// TODO Auto-generated method stub
-		System.out.println("Start to load RDF models");
+		
+		System.out.println("Waitting for loading RDF models");
 		Model rxnormModel = RDFDataMgr.loadModel("terminologies/RXNORM.ttl");// load RxNorm RDF Model in Memory
 		Model icd10Model = RDFDataMgr.loadModel("terminologies/ICD10CM.ttl");// load ICD-10 RDF Model in Memory
 		modelMap.put(rxNorm, rxnormModel);

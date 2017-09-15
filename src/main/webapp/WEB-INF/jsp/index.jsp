@@ -35,7 +35,7 @@
 					<li><a href="query-conceptcode">Concept Code Query</a></li>
 					<li><a href="all-sensitive-category">Sensitive Categories</a></li>
 					<li><a href="query-valueset-sensitivecategory">ValueSet Query</a></li>
-					<li><a href="query-semanticrelation">Semantic Relation Query</a></li>
+					<li><a href="make-statistics-of-relation">Semantic Relation Statistics</a></li>
 				</ul>
 			</div>
 		</div>
@@ -258,6 +258,12 @@
 				<h3>Semantic Relation Query</h3>
 				<hr>
 				<form class="form-horizontal" method="post" action="show-query-semantic-relation">
+				<div class="form-group">
+						<label class="control-label col-md-3">Terminology</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="terminology" id="terminology" value="" />
+						</div>
+					</div>
 					<div class="form-group">
 						<label class="control-label col-md-3">Source Concept Code</label>
 						<div class="col-md-7">
@@ -269,6 +275,30 @@
 						<div class="col-md-7">
 							<input type="text" class="form-control" name="targetCode" id="targetCode" value=""/>
 						</div>				
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'RELATION_STATISTICS'}">
+			<div class="container text-center">
+				<h3>Semantic Relation Query</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="show-statisticsofrelation">
+				<div class="form-group">
+						<label class="control-label col-md-3">Terminology</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="terminology" id="terminology" value="" />
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3">Semantic Relation</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="relation" id="relation" value="" />
+						</div>
 					</div>
 					<div>
 						<input type="submit" class="btn btn-primary" value="Search" />
@@ -298,6 +328,62 @@
 									<td>${RdfModelViewUnit.object}</td>
 								</tr>
 							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+				
+		</c:when>
+		
+		<c:when test="${model == 'SHOW_STATISTICS_RESULT' }">
+			<div class="container"></div>
+				<h3>Semantic Relation Statistics</h3>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered text-left" id="relationStatisticTable">
+						<thead>
+							<tr>
+								<th>Number of Concept Codes</th>
+								<th>Number of Concept Codes with Specified Relation</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>${statisticsView.numOfConceptCode}</td>
+								<td>${statisticsView.numOfSpecifiedRelation}</td>
+							</tr>
+						</tbody>
+					</table>
+					<h3>Concept codes without specified relation</h3>
+					<hr>
+					<table class="table table-striped table-bordered text-left" id="noSpecifiedRelationTable">
+						<thead>
+							<tr>
+								<th>Concept Code With no Specified Relation</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="conceptCodeWithoutSpecifiedRelation" items="${statisticsView.conceptCodesWithoutSpecifiedRelation }">
+								<tr>
+									<td><a href="semanticRelations?terminology=${statisticsView.terminology }&conceptCode=${conceptCodeWithoutSpecifiedRelation }">${conceptCodeWithoutSpecifiedRelation}</a></td>
+								</tr>
+							</c:forEach>		
+						</tbody>
+					</table>
+					<h3>Concept code with no relation</h3>
+					<hr>
+					<table class="table table-striped table-bordered text-left" id="noRelationTable">
+						<thead>
+							<tr>
+								<th>Concept Code</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="conceptCodesWithoutRelation" items="${statisticsView.conceptCodesWithoutRelation }">
+								<tr>
+									<td><a href="semanticRelations?terminology=${statisticsView.terminology }&conceptCode=${conceptCodesWithoutRelation }">${conceptCodesWithoutRelation}</a></td>
+								</tr>
+							</c:forEach>
+							
 						</tbody>
 					</table>
 				</div>
@@ -358,6 +444,8 @@
  	       $('#valueSetTable').DataTable();
  	       $('#sensitiveCategoryTable').DataTable();
  	       $('#semanticRelationTable').DataTable();
+ 	      $('#noSpecifiedRelationTable').DataTable();
+ 	     $('#noRelationTable').DataTable();
  	   } );
     </script>
 </body>

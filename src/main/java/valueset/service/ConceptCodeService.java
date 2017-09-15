@@ -39,7 +39,7 @@ public class ConceptCodeService {
 		List<ConceptCodeModelView> conceptCodeModels = new ArrayList<ConceptCodeModelView>();
 		List<CodeSystem> codeSystems = new ArrayList<CodeSystem>();
 		if (parameterName.equalsIgnoreCase("codeSystemName")) {
-			//Actually, one coding system corresponding to one code system
+			//Actually, one terminology corresponding to one code system, so, here, List is not needed
 			codeSystems = codeSystemRep.findCodeSystemsByName(parameterValue);
 		}
 		
@@ -51,17 +51,25 @@ public class ConceptCodeService {
 		if (null != codeSystems
 				&& codeSystems.size() > 0) {
 			for(CodeSystem codeSystem : codeSystems) {
-				ConceptCodeModelView conceptCodeModel = new ConceptCodeModelView();
-				conceptCodeModel.setCodeSystem(codeSystem);
-				//Need to correct the following code if different code system veriosn should be considered
-				for (CodeSystemVersion codeSystemVersion : codeSystem.getCodeSystemVersions()) {
-					conceptCodeModel.setConceptCodes((List<ConceptCode>)codeSystemVersion.getConceptCodes());
-				}
-				conceptCodeModels.add(conceptCodeModel);
+				queryDB2GetConceptCodes(codeSystem, conceptCodeModels);
 			}
 		}
 		return conceptCodeModels;
 	}
 	
-	//Find all related concept code by given OID
+	/**
+	 * Query DB to get all concept codes with given terminology
+	 * @param codeSystems
+	 * @param conceptCodeModels
+	 */
+	public void queryDB2GetConceptCodes(CodeSystem codeSystem, List<ConceptCodeModelView> conceptCodeModels) {
+		ConceptCodeModelView conceptCodeModel = new ConceptCodeModelView();
+		conceptCodeModel.setCodeSystem(codeSystem);
+		//Need to correct the following code if different code system veriosn should be considered
+		for (CodeSystemVersion codeSystemVersion : codeSystem.getCodeSystemVersions()) {
+			conceptCodeModel.setConceptCodes((List<ConceptCode>)codeSystemVersion.getConceptCodes());
+		}
+		conceptCodeModels.add(conceptCodeModel);
+	}
+	
 }

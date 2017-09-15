@@ -20,6 +20,11 @@ import org.apache.jena.util.FileManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import valueset.dao.CodeSystemRepository;
+import valueset.model.dbModel.CodeSystem;
+import valueset.model.dbModel.ConceptCode;
+import valueset.model.modelView.ConceptCodeModelView;
+import valueset.model.modelView.RelationStatisticsModelView;
 import valueset.model.modelView.SemanticRelationModelView;
 import valueset.rdfModelManage.LoadRdfModel;
 import valueset.rdfModelManage.RdfModelViewUnit;
@@ -27,34 +32,41 @@ import valueset.rdfModelManage.RdfModelViewUnit;
 @Service
 public class ValueSetMappingService {
 
+	private final String subject = "SUBJECT";
 	private final String predicate = "PREDICATE";
 	private final String object = "OBJECT";
 	
 	@Autowired
 	private LoadRdfModel loadRdfModel;
+	@Autowired
+	private ConceptCodeService conceptCodeService;
 	
+    private final CodeSystemRepository codeSystemRep;
+	
+    public ValueSetMappingService(CodeSystemRepository codeSystemRep) {
+		this.codeSystemRep = codeSystemRep;
+	}
+	/**
+	 * Query direct semantic relation by giving terminology and concept code
+	 * @param terminology
+	 * @param conceptCode
+	 * @return
+	 */
 	public SemanticRelationModelView queryRelationOfConceptCode (String terminology, String conceptCode) {
 		
+		//Get RDF model by requested terminology
 		Model model = loadRdfModel.getModelMap().get(terminology);
 		
 		//For unit test
 		//Model model = RDFDataMgr.loadModel("terminologies/RXNORM.ttl");
 		
+		//Parameterize SPARQL query
 		ParameterizedSparqlString pss = new ParameterizedSparqlString();
 		//Set prefix
-		Map<String, String> nameSpaceMap = new HashMap<String, String>();
-		nameSpaceMap.put("skos", "http://www.w3.org/2004/02/skos/core#");
-		nameSpaceMap.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-		nameSpaceMap.put("RxNorm", "http://purl.bioontology.org/ontology/RXNORM/");
-		pss.setNsPrefixes(nameSpaceMap);
+		setNameSpace(pss);
 		// create query command - Query all predicates of a given concept code, and its corresponding concept/Literal
-		String commandText = "SELECT DISTINCT ?p ?o WHERE { "
-				+ " ?s skos:notation ?conceptCode ."
-				+ " ?s ?p ?o ."
-				+ "}";
-		pss.setCommandText(commandText);
+		pss.setCommandText(commandTextUsedByQueryRelationofCode());
 		pss.setLiteral("conceptCode", conceptCode);
-		System.out.println(pss.toString());
 		
 		Query query = QueryFactory.create(pss.toString());//create a query statement with given query string
 		QueryExecution qexec = QueryExecutionFactory.create(query, model);
@@ -66,15 +78,16 @@ public class ValueSetMappingService {
 		Map<String, RDFNode> rdfNodeMap = new HashMap<String, RDFNode>();
 		
 		while(rs.hasNext()) {
-			QuerySolution soln = rs.nextSolution();
-			
+
 			RdfModelViewUnit modelUnit = new RdfModelViewUnit ();
 			modelUnit.setSubject(conceptCode);
+			analyzeQueryResults(rs, modelUnit, rdfNodeMap, modelViewUnits, conceptCode, "");
+			/*QuerySolution soln = rs.nextSolution();			
 			//Analyze its predicate
 			rdfNodeMap.put(predicate, soln.get("p"));//add predicate
 			rdfNodeMap.put(object, soln.get("o"));//add object
-			analyzeRdfNode (rdfNodeMap, modelUnit, conceptCode);
-			modelViewUnits.add(modelUnit);
+			analyzeRdfNode (rdfNodeMap, modelUnit);
+			modelViewUnits.add(modelUnit);*/
 		}
 		
 		relationModelView.setRdfViews(modelViewUnits);
@@ -83,13 +96,199 @@ public class ValueSetMappingService {
 			
 	}
 	
+/*public SemanticRelationModelView queryBySpecificRelationAndConceptCode (String terminology, String relation, String conceptCode) {
+		
+		//Get RDF model by requested terminology
+		Model model = loadRdfModel.getModelMap().get(terminology);
+		
+		//For unit test
+		//Model model = RDFDataMgr.loadModel("terminologies/RXNORM.ttl");
+		
+		//Parameterize SPARQL query
+		ParameterizedSparqlString pss = new ParameterizedSparqlString();
+		//Set prefix
+		setNameSpace(pss);
+		// create query command - Query all predicates of a given concept code, and its corresponding concept/Literal
+		String commandText = "SELECT DISTINCT ?s ?p ?o WHERE { "
+				+ " ?s ?p ?o ."
+				+ "}";
+		pss.setCommandText(commandText);
+		pss.setLiteral("conceptCode", conceptCode);
+		
+		Query query = QueryFactory.create(pss.toString());//create a query statement with given query string
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		ResultSet rs = qexec.execSelect();
+		
+		//Assemble the results to show
+		SemanticRelationModelView relationModelView = new SemanticRelationModelView();
+		List<RdfModelViewUnit> modelViewUnits  = new ArrayList<RdfModelViewUnit>();
+		Map<String, RDFNode> rdfNodeMap = new HashMap<String, RDFNode>();
+		
+		while(rs.hasNext()) {
+
+			RdfModelViewUnit modelUnit = new RdfModelViewUnit ();
+			modelUnit.setSubject(conceptCode);
+			analyzeQueryResults(rs, modelUnit, rdfNodeMap, modelViewUnits, conceptCode, "");
+			QuerySolution soln = rs.nextSolution();			
+			//Analyze its predicate
+			rdfNodeMap.put(predicate, soln.get("p"));//add predicate
+			rdfNodeMap.put(object, soln.get("o"));//add object
+			analyzeRdfNode (rdfNodeMap, modelUnit);
+			modelViewUnits.add(modelUnit);
+		}
+		
+		relationModelView.setRdfViews(modelViewUnits);
+		
+		return relationModelView;
+			
+	}*/
+	
+	/**
+	 * Make a statistic about the specific relation of a given terminology
+	 * @param terminology
+	 * @param relation
+	 */
+	public RelationStatisticsModelView getStatisticsOfRelation (String terminology, String relation) {
+		
+		List<ConceptCodeModelView> conceptCodeModels = new ArrayList<ConceptCodeModelView>();
+		RelationStatisticsModelView relationStatisticsModelView = new RelationStatisticsModelView();
+		/*CodeSystem codeSystem = new CodeSystem();
+		codeSystem.setCode(terminology);*/
+		List<CodeSystem> codeSystems = codeSystemRep.findCodeSystemsByName(terminology);
+		conceptCodeService.queryDB2GetConceptCodes(codeSystems.get(0), conceptCodeModels);
+		int numOfConceptCode = 0;//Record the number of total concept code
+		int numOfSpecifiedRelation = 0;//Record the number of concept codes which do not have the specified relation
+		List<String> conceptCodesWithoutRelation = new ArrayList<String>();//Record the concepts that have no relation with other concepts
+		List<String> conceptCodesWithoutSpecifiedRelation = new ArrayList<String>();//Record the concepts that have no specified relation with other concepts
+		
+		List<SemanticRelationModelView> relationModels = new ArrayList<SemanticRelationModelView>();
+		if (conceptCodeModels.size() > 0) {
+			for (ConceptCodeModelView conceptCodetModel : conceptCodeModels) {
+				List<ConceptCode> conceptCodes = conceptCodetModel.getConceptCodes();
+				SemanticRelationModelView relationModel = new SemanticRelationModelView();
+				numOfConceptCode = conceptCodes.size();
+				for (ConceptCode conceptCode : conceptCodes) {
+					relationModel = queryRelationOfConceptCode(terminology, conceptCode.getCode());
+					//Record the concept that has no relation with other concepts
+					if (relationModel.getRdfViews().size()==0) {
+						conceptCodesWithoutRelation.add(conceptCode.getCode());
+						System.out.println(conceptCode.getCode());
+						}
+					relationModels.add(relationModel);
+				}
+				
+			}
+		}
+		
+		//iterate relation models to check whether the concept has the given relation
+		for (SemanticRelationModelView relationModel : relationModels) {
+			List<RdfModelViewUnit> rdfModelViewUnits = relationModel.getRdfViews();
+			boolean flag = false;//whether the given code has the specified relation
+			//String irrelevantCode = "";
+			for (RdfModelViewUnit rdfModelViewUnit : rdfModelViewUnits) {
+				if (rdfModelViewUnit.getPredicate().toLowerCase().indexOf(relation.toLowerCase()) >= 0) {
+					numOfSpecifiedRelation++;
+					flag = true;
+					break;
+				}
+			}
+			if (!flag && rdfModelViewUnits.size() > 0) {
+				conceptCodesWithoutSpecifiedRelation.add(rdfModelViewUnits.get(0).getSubject());
+				System.out.println(rdfModelViewUnits.get(0).getSubject());
+			}
+		}
+		
+		relationStatisticsModelView.setNumOfConceptCode(numOfConceptCode);
+		relationStatisticsModelView.setNumOfSpecifiedRelation(numOfSpecifiedRelation);
+		relationStatisticsModelView.setConceptCodesWithoutRelation(conceptCodesWithoutRelation);
+		relationStatisticsModelView.setConceptCodesWithoutSpecifiedRelation(conceptCodesWithoutSpecifiedRelation);
+		relationStatisticsModelView.setTerminology(terminology);
+		//System.out.println(stringCodes);
+		System.out.println("Concept Code Number: " + numOfConceptCode + " / Relation Number: " + numOfSpecifiedRelation);
+	
+		return relationStatisticsModelView;
+	}
+	
+	/**
+	 * Query semantic relation by giving two codes and terminology
+	 * @param terminology
+	 * @param sourceCode
+	 * @param targetCode
+	 * @return
+	 */
+	public SemanticRelationModelView queryRelationBetween2Concepts(String terminology, String sourceCode, String targetCode) {
+		
+		//Get RDF model by requested terminology
+		Model model = loadRdfModel.getModelMap().get(terminology);
+		//Parameterize SPARQL query
+		ParameterizedSparqlString pss = new ParameterizedSparqlString();
+		//Set prefix
+		setNameSpace(pss);
+		// create query command - Query all predicates of a given concept code, and its corresponding concept/Literal
+		String commandText = "SELECT DISTINCT ?s ?p ?o WHERE { "
+				+ " ?s ?p ?o ."
+				+ " ?s skos:notation ?sourceCode ."
+				+ " ?o skos:notation ?targetCode ."
+				+ "}";
+		pss.setCommandText(commandText);
+		pss.setLiteral("sourceCode", sourceCode);//assign value to variable
+		pss.setLiteral("targetCode", targetCode);//assign value to variable
+		System.out.println(pss.toString());
+		
+		Query query = QueryFactory.create(pss.toString());//create a query statement with given query string
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		ResultSet rs = qexec.execSelect();
+		
+		SemanticRelationModelView relationModelView = new SemanticRelationModelView();
+		List<RdfModelViewUnit> modelViewUnits  = new ArrayList<RdfModelViewUnit>();
+		Map<String, RDFNode> rdfNodeMap = new HashMap<String, RDFNode>();
+		
+		while (rs.hasNext()) {
+			RdfModelViewUnit modelUnit = new RdfModelViewUnit ();
+			modelUnit.setSubject(sourceCode);
+			modelUnit.setObject(targetCode);
+			analyzeQueryResults(rs, modelUnit, rdfNodeMap, modelViewUnits, sourceCode, targetCode);
+		}
+		
+		relationModelView.setRdfViews(modelViewUnits);
+		
+		return relationModelView;
+				
+	}
+	
+	/**
+	 * Analyze Query result
+	 * @param rs
+	 * @param modelUnit
+	 * @param rdfNodeMap
+	 * @param modelViewUnits
+	 */
+	public void analyzeQueryResults (ResultSet rs, RdfModelViewUnit modelUnit, Map<String, RDFNode> rdfNodeMap, 
+			List<RdfModelViewUnit> modelViewUnits, String sourceCode, String targetCode ) {
+		
+		QuerySolution soln = rs.nextSolution();
+		
+		if (sourceCode.isEmpty() && !targetCode.isEmpty()) {			
+			rdfNodeMap.put(object, soln.get("s"));//add subject
+			rdfNodeMap.put(predicate, soln.get("p"));//add predicate
+		}
+		if (!sourceCode.isEmpty() && targetCode.isEmpty()) {
+			rdfNodeMap.put(predicate, soln.get("p"));//add predicate
+			rdfNodeMap.put(object, soln.get("o"));//add object
+		}
+		
+		if (!sourceCode.isEmpty() && !targetCode.isEmpty()) {
+			rdfNodeMap.put(predicate, soln.get("p"));//add predicate
+		}
+		analyzeRdfNode (rdfNodeMap, modelUnit);
+		modelViewUnits.add(modelUnit);
+	}
 	/**
 	 * Analyze RDF Node of query results
 	 * @param rdfNodeMap
 	 * @param modelViewUnits
-	 * @param conceptCode
 	 */
-	public void analyzeRdfNode (Map<String, RDFNode> rdfNodeMap, RdfModelViewUnit modelViewUnit, String conceptCode) {
+	public void analyzeRdfNode (Map<String, RDFNode> rdfNodeMap, RdfModelViewUnit modelViewUnit) {
 		
 		//Loop Map with forEach + lambda expression, only available in Java 8
 		rdfNodeMap.forEach((key,value)->{
@@ -110,6 +309,26 @@ public class ValueSetMappingService {
 				}
 			}
 		});
+	}
+	
+	/**
+	 * Set Namespace for SPARQL query
+	 * @param pss
+	 */
+	public void setNameSpace (ParameterizedSparqlString pss) {
+		Map<String, String> nameSpaceMap = new HashMap<String, String>();
+		nameSpaceMap.put("skos", "http://www.w3.org/2004/02/skos/core#");
+		nameSpaceMap.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+		nameSpaceMap.put("RxNorm", "http://purl.bioontology.org/ontology/RXNORM/");
+		pss.setNsPrefixes(nameSpaceMap);
+	}
+	
+	public String commandTextUsedByQueryRelationofCode () {
+		String commandText = "SELECT DISTINCT ?p ?o WHERE { "
+				+ " ?s skos:notation ?conceptCode ."
+				+ " ?s ?p ?o ."
+				+ "}";
+		return commandText;
 	}
 	public static void main(String[] args) {
 		//queryRelationOfConceptCode ("RxNorm", "104781");
