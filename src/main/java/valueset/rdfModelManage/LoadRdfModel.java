@@ -5,11 +5,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.reasoner.Reasoner;
+import org.apache.jena.reasoner.ValidityReport;
+import org.apache.jena.reasoner.rulesys.RDFSRuleReasonerFactory;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.util.FileManager;
+import org.apache.jena.vocabulary.ReasonerVocabulary;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import javassist.bytecode.Descriptor.Iterator;
 
 /**
  * RDF Model load-on-startup
@@ -28,9 +37,11 @@ public class LoadRdfModel implements CommandLineRunner{
 		
 		System.out.println("Waitting for loading RDF models");
 		Model rxnormModel = RDFDataMgr.loadModel("terminologies/RXNORM.ttl");// load RxNorm RDF Model in Memory
-		Model icd10Model = RDFDataMgr.loadModel("terminologies/ICD10CM.ttl");// load ICD-10 RDF Model in Memory
+		//Model icd10Model = RDFDataMgr.loadModel("terminologies/ICD10CM.ttl");// load ICD-10 RDF Model in Memory
 		modelMap.put(rxNorm, rxnormModel);
-		modelMap.put(icd10, icd10Model);
+		//modelMap.put(icd10, icd10Model);
+		//validateModel(rxnormModel);//validate model	
+		
 	}
 
 	public Map<String, Model> getModelMap() {
@@ -41,5 +52,28 @@ public class LoadRdfModel implements CommandLineRunner{
 		this.modelMap = modelMap;
 	}
 
+	/**
+	 * Validate model
+	 * 
+	 * @param model
+	 */
+	public void validateModel (Model model) {
+		//Set Reasoner
+		Resource config = ModelFactory.createDefaultModel().createResource()
+				.addProperty(ReasonerVocabulary.PROPsetRDFSLevel, "default");
+		Reasoner reasoner = RDFSRuleReasonerFactory.theInstance().create(config);
+		//InfModel infmodel = ModelFactory.createRDFSModel(rxnormModel);
+		InfModel infmodel = ModelFactory.createInfModel(reasoner, model);
+		ValidityReport validity = infmodel.validate();
+		
+		if (validity.isValid()) {
+			System.out.println("OK");
+		} else {
+			System.out.print("Conflicts");
+			for (Iterator i = (Iterator) validity.getReports(); i.hasNext();) {
+				System.out.println(" - " + i.next());
+			}
+		}
+	}
 	
 }

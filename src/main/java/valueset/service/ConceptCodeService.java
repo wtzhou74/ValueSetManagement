@@ -8,9 +8,12 @@ import javax.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import valueset.dao.CodeSystemRepository;
+import valueset.dao.ConceptCodeRepository;
 import valueset.model.dbModel.CodeSystem;
 import valueset.model.dbModel.CodeSystemVersion;
 import valueset.model.dbModel.ConceptCode;
+import valueset.model.dbModel.ValueSet;
+import valueset.model.dbModel.ValueSetCategory;
 import valueset.model.modelView.ConceptCodeModelView;
 
 /**
@@ -23,9 +26,11 @@ import valueset.model.modelView.ConceptCodeModelView;
 public class ConceptCodeService {
 
 	private final CodeSystemRepository codeSystemRep;
+	private final ConceptCodeRepository conceptCodeRep;
 	
-	public ConceptCodeService(CodeSystemRepository codeSystemRep) {
+	public ConceptCodeService(CodeSystemRepository codeSystemRep, ConceptCodeRepository conceptCodeRep) {
 		this.codeSystemRep = codeSystemRep;
+		this.conceptCodeRep = conceptCodeRep;
 	}
 	
 	/**
@@ -71,5 +76,30 @@ public class ConceptCodeService {
 		}
 		conceptCodeModels.add(conceptCodeModel);
 	}
+	
+	/**
+	 * Find Sensitive information for a specified concept code
+	 * @param conceptCode
+	 * @return
+	 */
+	public List<String> findSensitiveOfSpecifiedConcept (String conceptCode) {
+		ConceptCode concept = new ConceptCode ();
+		//One concept could refer to more than one category
+		List<String> sensitiveCategorys = new ArrayList<String>();
+		List<ConceptCode> concepts = conceptCodeRep.findConceptByConceptCode(conceptCode);
+		if (concepts.isEmpty()) {
+			System.out.println("NO SENSITIVE CATEGORY FOUND IN VS");
+			return sensitiveCategorys;
+		}
+		//Each code refers to one ConceptCode Object
+		concept = concepts.get(0);
+		List<ValueSet> valueSets = concept.getValueSets();
+		for (ValueSet valueSet : valueSets) {
+			ValueSetCategory valueSetCategory = valueSet.getValueSetCategory();
+			sensitiveCategorys.add(valueSetCategory.getCode());
+		}
+		return sensitiveCategorys;
+	}
+	
 	
 }

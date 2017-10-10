@@ -13,4 +13,8 @@ provided by SAMHSA.
 + Jena verison should be 3.0.0, or RDFDataMgr.loadModel() will get errors
 + The RDF models should be placed on src/main/resources/terminolgies, and the file name is like RXNORM.ttl, ICD10CM.ttl.
 
-
+#Updates
+==========
++ Concept Mapping based on BFS
++ Please start from Class: ConceptMappingService.java
++ Script of the table Termtypes-relationship will be committed later.

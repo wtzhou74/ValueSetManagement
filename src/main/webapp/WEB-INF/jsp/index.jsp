@@ -18,6 +18,7 @@
     <link href="static/css/style.css" rel="stylesheet">  -->
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link href="static/css/style.css" rel="stylesheet">
      
     <!--[if lt IE 9]>
@@ -26,19 +27,24 @@
 	<![endif]-->
 </head>
 <body>
-	<div role="navigation">
-		<div class="navbar navbar-inverse">
-			<a href="/" class="navbar-brand">ValueSetManagement</a>
-			<div class="navbar-collapse collapse">
-				<ul class="nav navbar-nav">
-					<li><a href="all-codesystems">Code Systems</a></li>
-					<li><a href="query-conceptcode">Concept Code Query</a></li>
-					<li><a href="all-sensitive-category">Sensitive Categories</a></li>
-					<li><a href="query-valueset-sensitivecategory">ValueSet Query</a></li>
+	<div class="container">
+		<h3><a href="/">ValueSetManagement</a></h3>
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="/">Home</a></li>
+			<li><a href="all-codesystems">Code Systems</a></li>
+			<li><a href="query-conceptcode">Concept Code Query</a></li>
+			<li><a href="all-sensitive-category">Sensitive Categories</a></li>
+			<li><a href="query-valueset-sensitivecategory">ValueSet Query</a></li>
+			<li class="dropdown">
+				<a class="dropdown-toggle" data-toggle="dropdown">Semantic Mapping <span class="caret"></span></a>
+				<ul class="dropdown-menu">
 					<li><a href="make-statistics-of-relation">Semantic Relation Statistics</a></li>
-				</ul>
-			</div>
-		</div>
+					<li><a href="get-related-concept">Related Concepts Query</a></li>
+					<li><a href="query-term_type">Term Type Query</a></li>
+					<li><a href="query-mapped-concept">Concept Mapping</a></li>
+				</ul>				
+			</li>			
+		</ul>
 	</div>
 	
 	<c:choose>
@@ -161,6 +167,11 @@
 		<c:when test="${mode == 'CONCEPT_CODE_VIA_NAME' }">
 			<div class="container">
 				<h3>Concept Code List</h3>
+				<dl>
+					<dt class="text-info">Note:</dt>
+					<dd>- Query its ALL semantic directed relations by clicking a specified <code>Concept Code</code>.</dd>
+					<dd>- Query its sensitive category by clicking a specified <code>Concept Code Name</code>.</dd>
+				</dl>
 				<hr>
 				<div class="table-responsive">
 					<table class="table table-striped table-bordered table-hover" id="conceptCodeTable">
@@ -307,12 +318,36 @@
 			</div>
 		</c:when>
 		
+		<c:when test="${model == 'CONCEPT_MAPPINGS'}">
+			<div class="container text-center">
+				<h3>Relevant Concept Search</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="showRelatedConcepts">
+				<div class="form-group">
+						<label class="control-label col-md-3">Terminology</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="terminology" id="terminology" value="RxNorm" />
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3">Concept Code</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="conceptCode" id="conceptCode" value="" />
+						</div>
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
 		<c:when test="${model == 'SEMANTIC_RELATION_VIEW' }">
-			<div class="container"></div>
+			<div class="container">
 				<h3>Semantic Relation</h3>
 				<hr>
 				<div class="table-responsive">
-					<table class="table table-striped table-bordered text-left" id="semanticRelationTable">
+					<table class="table table-striped table-bordered table-hover" id="semanticRelationTable">
 						<thead>
 							<tr>
 								<th>Source Concept</th>
@@ -331,11 +366,11 @@
 						</tbody>
 					</table>
 				</div>
-				
+			</div>
 		</c:when>
 		
 		<c:when test="${model == 'SHOW_STATISTICS_RESULT' }">
-			<div class="container"></div>
+			<div class="container">
 				<h3>Semantic Relation Statistics</h3>
 				<hr>
 				<div class="table-responsive">
@@ -387,8 +422,104 @@
 						</tbody>
 					</table>
 				</div>
-				
+			</div>
 		</c:when>
+		
+		<c:when test="${model == 'CONCEPT_MAPPING_REQUEST'}">
+			<div class="container text-center">
+				<h3>Concept Mapping</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="showcConceptMappingResults">
+				<div class="form-group">
+						<label class="control-label col-md-3">Terminology</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="terminology" id="terminology" value="RxNorm" />
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3">Concept Code</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="conceptCode" id="conceptCode" value="" />
+						</div>
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
+		
+		<c:when test="${model == 'CONCEPT_MAPPING_RESULTS' }">
+			<div class="container">
+				<h3>Concept Mapping Results</h3>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover" id="conceptMappingResultTable">
+						<thead>
+							<tr>
+								<th>Source Concept</th>
+								<th>Path</th>
+								<th>Sensitive Category</th>
+								<th>Target Concept</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="conceptMappingResultModelView" items="${conceptMappingView}">
+								<c:forEach var="sensitiveCategory" items = "${conceptMappingResultModelView.sensitiveCategories}">
+									<tr>
+										<td>${conceptMappingResultModelView.sourceConcept}</td>
+										<td>${conceptMappingResultModelView.relations}</td>
+										<td>${sensitiveCategory}</td>
+										<td>${conceptMappingResultModelView.targetConcept}</td>
+									</tr>
+								</c:forEach>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'QUERY_TERM_TYPE'}">
+			<div class="container text-center">
+				<h3>Query Term Type</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="showTermType">
+					<div class="form-group">
+						<label class="control-label col-md-3">Concept Code</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="conceptCode" id="conceptCode" value="" />
+						</div>
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'TERM_TYPE' }">
+			<div class="container">
+				<h3>Term Type</h3>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover" id="termTypeTable">
+						<thead>
+							<tr>
+								<th>Term Type</th>
+							</tr>
+						</thead>
+						<tbody>			
+							<tr>
+								<td>${termType}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</c:when>
+		
 		
 		<c:when test="${mode == 'MODE_NEW' || mode == 'MODE_UPDATE'}">
 			<div class="container text-center">

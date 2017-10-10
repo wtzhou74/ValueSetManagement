@@ -15,6 +15,7 @@ import valueset.model.dbModel.CodeSystem;
 import valueset.model.modelView.ConceptCodeModelView;
 import valueset.service.CodeSystemService;
 import valueset.service.ConceptCodeService;
+import valueset.service.ConceptMappingService;
 
 /**
  * Controller response the requests related to concept code
@@ -28,6 +29,8 @@ public class ConceptCodeController {
 	private CodeSystemService codeSystemService;
 	@Autowired
 	private ConceptCodeService conceptCodeService;
+	@Autowired
+	private ConceptMappingService conceptMappinService;
 	
 	@GetMapping("/")
 	public String home(HttpServletRequest request) {
@@ -78,6 +81,13 @@ public class ConceptCodeController {
 	public String showConceptCode(@ModelAttribute List<ConceptCodeModelView> conceptCodeModels, HttpServletRequest request) {
 		request.setAttribute("conceptCodeModels", conceptCodeModels);
 		request.setAttribute("mode", "SHOW_CONCEPT_CODE_MODEL");
+		return "index";
+	}
+	
+	@GetMapping("/test-conceptCode")
+	public String test() {
+		//conceptCodeService.findSensitiveOfSpecifiedConcept("152318");
+		conceptMappinService.findMappedConceptInVS("1040032");
 		return "index";
 	}
 }
