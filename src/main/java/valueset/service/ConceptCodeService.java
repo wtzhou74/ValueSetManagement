@@ -86,13 +86,20 @@ public class ConceptCodeService {
 		ConceptCode concept = new ConceptCode ();
 		//One concept could refer to more than one category
 		List<String> sensitiveCategorys = new ArrayList<String>();
-		List<ConceptCode> concepts = conceptCodeRep.findConceptByConceptCode(conceptCode);
+		List<ConceptCode> concepts = new ArrayList<ConceptCode>();
+		concepts = conceptCodeRep.findConceptByConceptCode(conceptCode);
+		//Query it again in case that the code in VS is end up with 0, such as F16.2 is in ICD10, while F16.20 is in VS.
+		//This is not a good solution.
+		if (concepts.isEmpty()) {
+			concepts = conceptCodeRep.findConceptByConceptCode(conceptCode.concat("0"));
+		}
 		if (concepts.isEmpty()) {
 			System.out.println("NO SENSITIVE CATEGORY FOUND IN VS");
 			return sensitiveCategorys;
 		}
 		//Each code refers to one ConceptCode Object
 		concept = concepts.get(0);
+		
 		List<ValueSet> valueSets = concept.getValueSets();
 		for (ValueSet valueSet : valueSets) {
 			ValueSetCategory valueSetCategory = valueSet.getValueSetCategory();

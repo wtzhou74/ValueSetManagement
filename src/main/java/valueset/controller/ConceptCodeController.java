@@ -87,7 +87,7 @@ public class ConceptCodeController {
 	@GetMapping("/test-conceptCode")
 	public String test() {
 		//conceptCodeService.findSensitiveOfSpecifiedConcept("152318");
-		conceptMappinService.findMappedConceptInVS("1040032");
+		conceptMappinService.findMappedConceptInVS("1040032", "RxNorm", "1");
 		return "index";
 	}
 }

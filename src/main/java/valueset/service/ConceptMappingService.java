@@ -16,12 +16,20 @@ import org.springframework.stereotype.Service;
 
 import valueset.model.dbModel.RxnSemanticRelations;
 import valueset.model.modelView.ConceptMappingResultModelView;
-import valueset.model.modelView.TreeNodeModel;
+import valueset.model.modelView.GraphNodeModel;
+import valueset.model.wsModel.ConceptGroup;
+import valueset.model.wsModel.ConceptProperties;
 import valueset.model.wsModel.PropConcept;
 import valueset.model.wsModel.PropConceptResponse;
+import valueset.model.wsModel.RxnormDataWithSpecifiedTtyResponse;
 import valueset.service.ws.rxnorm.RxNormWebService;
 import valueset.utils.ConstantUtil;
 
+/**
+ * Major business logics used to handle concept mapping between RxNorm and VS
+ * @author ZHOU WENTAO
+ *
+ */
 @Service
 public class ConceptMappingService {
 	
@@ -33,12 +41,48 @@ public class ConceptMappingService {
 	private RxnSemanticRelationService rxnSemanticRelationService;
 	@Autowired
 	private JenaBasedSemanticService jenaBasedSemanticService;
+	@Autowired
+	private ICDcmConceptService iCDcmConceptService;
 	
-	public List<ConceptMappingResultModelView> findMappedConceptInVS (String sourceConcept) {
+	public List<ConceptMappingResultModelView> findMappedConceptInVS (String sourceConcept, String codeSystem, String solution) {
+		
+		List<ConceptMappingResultModelView> conceptMappingResultViews = new ArrayList<ConceptMappingResultModelView>();
+		//ICD10CM
+		if (ConstantUtil.ICD10CM.equalsIgnoreCase(codeSystem)
+				|| ConstantUtil.ICD9CM.equalsIgnoreCase(codeSystem)) {
+			ConceptMappingResultModelView conceptMappingResultView = iCDcmConceptService.identifySenCategoryOfICDConcept(sourceConcept, codeSystem);
+			conceptMappingResultViews.add(conceptMappingResultView);
+			
+			return conceptMappingResultViews;
+		}
+		//TODO The following codes should be re-arranged
+		
 		//Check the TTY of the source concept
 		//Find the term type of the specified concept
+		
+		if (solution.equalsIgnoreCase("option1")){
+			
+			List<String> ingredients = getIngredientsOfSpecifiedConcept(sourceConcept, ConstantUtil.IN);
+			
+			for (String ingredient : ingredients) {
+				List<String> senCategoryList = conceptCodeService.findSensitiveOfSpecifiedConcept(ingredient);
+				
+				ConceptMappingResultModelView conceptMappingResult = new ConceptMappingResultModelView();
+				
+				conceptMappingResult.setSensitiveCategories(senCategoryList);
+				conceptMappingResult.setSourceConcept(sourceConcept);
+				conceptMappingResult.setTargetConcept(ingredient);
+				conceptMappingResultViews.add(conceptMappingResult);
+				//print
+				//TODO UPDATE
+				printSensitive(sourceConcept, senCategoryList);
+			}
+			
+			return conceptMappingResultViews;
+		}
+
 		String sourceTTY = getTermType4SpecifiedConcept(sourceConcept);
-		List<ConceptMappingResultModelView> conceptMappingResultViews = new ArrayList<ConceptMappingResultModelView>(); 
+		
 		//Map the given concept to VS directly if TTY = IN
 		if (ConstantUtil.IN.equalsIgnoreCase(sourceTTY)) {
 			//find value set category for specified concept
@@ -55,9 +99,10 @@ public class ConceptMappingService {
 			
 			return conceptMappingResultViews;
 		}
+			
 		//List<String> relationPath = new ArrayList<>();
 		//find its target Sensitive
-		findTargetSensitive (sourceTTY, sourceConcept, conceptMappingResultViews);
+		findTargetSensitive (sourceTTY, sourceConcept, conceptMappingResultViews, codeSystem);
 		
 		return conceptMappingResultViews;
 		
@@ -71,12 +116,12 @@ public class ConceptMappingService {
 	 * @param sourceConcept
 	 */
 	public void findTargetSensitive (String sourceTTY, String sourceConcept, 
-			List<ConceptMappingResultModelView> conceptMappingResultViews) {
+			List<ConceptMappingResultModelView> conceptMappingResultViews, String codeSystem) {
 		
-		List<List<TreeNodeModel>> availablePaths = getAllAvailPathViaBreadthFirst(sourceTTY);
+		List<List<GraphNodeModel>> availablePaths = getAllAvailPathViaBreadthFirst(sourceTTY);
 		//to get the chain of relations by traversing the available paths backforward
 		List<List<String>> relationPaths = new ArrayList<List<String>>();
-		for (List<TreeNodeModel> paths : availablePaths) {
+		for (List<GraphNodeModel> paths : availablePaths) {
 			List<String> relations = new ArrayList<>();
 			for (int i = paths.size() - 1; i >= 0; i--) {
 				//Skip root node
@@ -88,7 +133,7 @@ public class ConceptMappingService {
 			relationPaths.add(relations);
 		}
 		for (List<String> path : relationPaths) {
-			findSensitiveOfTargetConcept(path, sourceConcept, conceptMappingResultViews);
+			findSensitiveOfTargetConcept(path, sourceConcept, conceptMappingResultViews, codeSystem);
 		}
 		
 	}
@@ -98,22 +143,21 @@ public class ConceptMappingService {
 	 * @param sourceTTY
 	 * @return
 	 */
-	public List<List<TreeNodeModel>> getAllAvailPathViaBreadthFirst(String sourceTTY) {
-		Deque<TreeNodeModel> nodeDeque = new ArrayDeque<TreeNodeModel>();
+	public List<List<GraphNodeModel>> getAllAvailPathViaBreadthFirst(String sourceTTY) {
+		Deque<GraphNodeModel> nodeDeque = new ArrayDeque<GraphNodeModel>();
 		List<String> tempTTY = new ArrayList<String>();
-		List<TreeNodeModel> tempNodes = new ArrayList<TreeNodeModel>();
+		List<GraphNodeModel> tempNodes = new ArrayList<GraphNodeModel>();
 		
-		//List<TreeNodeModel> treeNodes = new ArrayList<TreeNodeModel>();
-		List<List<TreeNodeModel>> availablePaths = new ArrayList<List<TreeNodeModel>>();
+		List<List<GraphNodeModel>> availablePaths = new ArrayList<List<GraphNodeModel>>();
 		
 		//Record the first node, and the first level is 0
-		TreeNodeModel rootNode = new TreeNodeModel();
+		GraphNodeModel rootNode = new GraphNodeModel();
 		rootNode.setCurrentLevel(0);
 		rootNode.setCurrentNode(sourceTTY);
 		nodeDeque.add(rootNode);
 		
 		while (!nodeDeque.isEmpty()) {
-			TreeNodeModel node = nodeDeque.pollFirst();//retrieve and remove the first element of queue
+			GraphNodeModel node = nodeDeque.pollFirst();//retrieve and remove the first element of queue
 			tempNodes.add(node);		
 			//Do not need to find children's node of IN
 			if (ConstantUtil.IN.equalsIgnoreCase(node.getCurrentNode())) {
@@ -125,16 +169,16 @@ public class ConceptMappingService {
 			}
 			tempTTY.add(node.getCurrentNode());
 			//Get the child's child's node
-			List<TreeNodeModel> children = getChildren (node.getCurrentNode());
+			List<GraphNodeModel> children = getChildren (node.getCurrentNode());
 			
 			if (children != null 
 					&& !children.isEmpty()) {
 				
-				for (TreeNodeModel child : children) {
+				for (GraphNodeModel child : children) {
 					
 					//Record its path when IN was found
 					if (ConstantUtil.IN.equalsIgnoreCase(child.getCurrentNode())) {
-						List<TreeNodeModel> path = new ArrayList<TreeNodeModel>();
+						List<GraphNodeModel> path = new ArrayList<GraphNodeModel>();
 						path.add(child);
 						String parentNode = child.getParentNode();
 						for (int i = 0; i < tempNodes.size(); i++) {
@@ -158,7 +202,7 @@ public class ConceptMappingService {
 			}
 		}
 		//Backward to get the path
-		for (List<TreeNodeModel> paths : availablePaths) {
+		for (List<GraphNodeModel> paths : availablePaths) {
 			for (int i = paths.size() - 1; i >= 0; i--) {
 				System.out.print(paths.get(i).getParentNode() + " / " + paths.get(i).getRelation() + " ");
 			}
@@ -175,12 +219,12 @@ public class ConceptMappingService {
 	 * @param parent
 	 * @return
 	 */
-	public List<TreeNodeModel> getChildren (String parent) {
-		List<TreeNodeModel> children = new ArrayList<TreeNodeModel>();
+	public List<GraphNodeModel> getChildren (String parent) {
+		List<GraphNodeModel> children = new ArrayList<GraphNodeModel>();
 		List<RxnSemanticRelations> semanticRelations = 
 				rxnSemanticRelationService.findSemanticRelations(parent);
 		for (RxnSemanticRelations semanticRelation : semanticRelations) {
-			TreeNodeModel node = new TreeNodeModel();
+			GraphNodeModel node = new GraphNodeModel();
 			node.setParentNode(parent);
 			node.setCurrentNode(semanticRelation.getDestination_termtype());
 			node.setRelation(semanticRelation.getRelation_name());
@@ -196,10 +240,10 @@ public class ConceptMappingService {
 	 * @param parentNode
 	 * @return
 	 */
-	public void findPathToIN (List<TreeNodeModel> path, List<TreeNodeModel> nodes, String parentNode) {
-		//List<TreeNodeModel> path = new ArrayList<TreeNodeModel>();
-		//TreeNodeModel parentNode = new TreeNodeModel();
-		for (TreeNodeModel tempNode : nodes) {
+	public void findPathToIN (List<GraphNodeModel> path, List<GraphNodeModel> nodes, String parentNode) {
+		//List<GraphNodeModel> path = new ArrayList<GraphNodeModel>();
+		//GraphNodeModel parentNode = new GraphNodeModel();
+		for (GraphNodeModel tempNode : nodes) {
 			if (tempNode.getCurrentNode().equals(parentNode)) {
 				path.add(tempNode);
 				//find the child's parent's parent
@@ -216,7 +260,7 @@ public class ConceptMappingService {
 	 * @param sourceConcept
 	 */
 	public void findSensitiveOfTargetConcept (List<String> relations, String sourceConcept, 
-			List<ConceptMappingResultModelView> conceptMappingResultViews) {
+			List<ConceptMappingResultModelView> conceptMappingResultViews, String codeSystem) {
 		
 		StringBuffer stringBuffer = new StringBuffer();
 		stringBuffer.append("SELECT DISTINCT ?o WHERE { ");
@@ -239,7 +283,7 @@ public class ConceptMappingService {
 		
 		stringBuffer.append(" }");
 		
-		List<String> targetConcepts = jenaBasedSemanticService.queryTargetConeptViaRelation("RxNorm", sourceConcept, stringBuffer.toString());
+		List<String> targetConcepts = jenaBasedSemanticService.queryTargetConeptViaRelation(codeSystem, sourceConcept, stringBuffer.toString());
 		for (String targetConcept : targetConcepts) {
 			//Check the term type of target concept, because each term type could refers to multiple target term types through a certain relation
 			String tty = getTermType4SpecifiedConcept(targetConcept);
@@ -251,7 +295,7 @@ public class ConceptMappingService {
 			if (!senCategoryList.isEmpty()) {
 				ConceptMappingResultModelView conceptMappingResultModelView = new ConceptMappingResultModelView();
 				conceptMappingResultModelView.setSourceConcept(sourceConcept);
-				conceptMappingResultModelView.setRelations(getRelationInString(relations));
+				conceptMappingResultModelView.setPath(getRelationInString(relations));
 				conceptMappingResultModelView.setSensitiveCategories(senCategoryList);
 				conceptMappingResultModelView.setTargetConcept(targetConcept);
 				
@@ -298,6 +342,32 @@ public class ConceptMappingService {
 			}
 		}
 		return termType;
+	}
+	
+	/**
+	 * Find all related Rxcui of concept with specified termtype
+	 * @param cui
+	 * @param tty
+	 * @return
+	 */
+	public List<String> getIngredientsOfSpecifiedConcept (String cui, String tty) {
+		List<String> ingredients = new ArrayList<String>();
+		RxnormDataWithSpecifiedTtyResponse response = new RxnormDataWithSpecifiedTtyResponse();
+		response = rxNormWebService.getConceptWithSepcifiedTTYandCUI(cui, tty);
+		
+		//Get the rxcui of concept with specified termtype
+		if (null != response.getRelatedGroup()) {
+			List<ConceptGroup> conceptGroups = response.getRelatedGroup().getConceptGroup();
+			for (ConceptGroup conceptGroup : conceptGroups) {
+				if (tty.equalsIgnoreCase(conceptGroup.getTty())) {
+					for (ConceptProperties conceptProperty : conceptGroup.getConceptProperties()) {
+						ingredients.add(conceptProperty.getRxcui());		
+					}
+				}
+			}
+		}
+		
+		return ingredients;
 	}
 	
 	//BreadthFirst

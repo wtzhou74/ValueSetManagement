@@ -2,6 +2,11 @@ package valueset.model.wsModel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Response through allProperties of RESTful API resource
+ * @author ZHOU WENTAO
+ *
+ */
 @JsonIgnoreProperties(
 		ignoreUnknown = true)
 public class PropConceptResponse {

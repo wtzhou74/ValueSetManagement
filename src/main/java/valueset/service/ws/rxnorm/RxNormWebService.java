@@ -17,7 +17,9 @@ import valueset.model.modelView.ConceptCodeModelView;
 import valueset.model.wsModel.PropConcept;
 import valueset.model.wsModel.PropConceptGroup;
 import valueset.model.wsModel.PropConceptResponse;
+import valueset.model.wsModel.RxnormDataWithSpecifiedTtyResponse;
 import valueset.service.ConceptCodeService;
+import valueset.utils.ConstantUtil;
 
 @Service
 public class RxNormWebService implements IRxNormWebService{
@@ -26,7 +28,7 @@ public class RxNormWebService implements IRxNormWebService{
      * The RestTemplate used to retrieve data from the remote Quote API.
      */
     private final RestTemplate restTemplate;
-    private final String TTY = "TTY";
+    //private final String TTY = "TTY";
     
     @Autowired
 	private ConceptCodeService conceptCodeService;
@@ -69,7 +71,7 @@ public class RxNormWebService implements IRxNormWebService{
 						propConceptReponse.getPropConceptGroup() != null) {
 					//record the value of TTY
 					for (PropConcept propConcept : propConceptReponse.getPropConceptGroup().getPropConcept()) {
-						if (TTY.equalsIgnoreCase(propConcept.getPropName())) {
+						if (ConstantUtil.PROP_NAME_TTY.equalsIgnoreCase(propConcept.getPropName())) {
 							conceptTty.put(concept.getCode(), propConcept.getPropValue());
 						}
 					}
@@ -103,10 +105,20 @@ public class RxNormWebService implements IRxNormWebService{
 	}
 	
 	/**
+	 * Find concept details with specified TTY and cui
+	 * */
+	public RxnormDataWithSpecifiedTtyResponse getConceptWithSepcifiedTTYandCUI (String cui, String values) {
+		RxnormDataWithSpecifiedTtyResponse conceptTTYResponse = new RxnormDataWithSpecifiedTtyResponse();
+		conceptTTYResponse = 
+				this.restTemplate.getForObject("https://rxnav.nlm.nih.gov/REST/rxcui/{cui}/related.json?tty={values}", RxnormDataWithSpecifiedTtyResponse.class,cui,values);
+		return conceptTTYResponse;
+	}
+	/**
 	 * Find RxTerm information for a specified RxNorm concept
 	 * @param cui
 	 */
 	public void getRxTermInfo4GivenConcept (String cui) {
 		
 	}
+	
 }

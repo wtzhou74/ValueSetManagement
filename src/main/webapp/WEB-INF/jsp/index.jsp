@@ -430,10 +430,22 @@
 				<h3>Concept Mapping</h3>
 				<hr>
 				<form class="form-horizontal" method="post" action="showcConceptMappingResults">
-				<div class="form-group">
+					<div class="form-group">
+						<label class="radio-inline">
+				          <input name="radioGroup" id="radio1" value="option1" checked="" type="radio">Solution 1
+				        </label>
+				        <label class="radio-inline">
+				          <input name="radioGroup" id="radio2" value="option2" type="radio">Solution 2
+				        </label>
+					</div>
+					<div class="form-group">
 						<label class="control-label col-md-3">Terminology</label>
 						<div class="col-md-7">
-							<input type="text" class="form-control" name="terminology" id="terminology" value="RxNorm" />
+							<select class="form-control" name= "terminology" id="terminology">
+								<option>RxNorm</option>
+								<option>ICD10CM</option>
+								<option>ICD9CM</option>
+							</select>
 						</div>
 					</div>
 					<div class="form-group">
@@ -469,7 +481,7 @@
 								<c:forEach var="sensitiveCategory" items = "${conceptMappingResultModelView.sensitiveCategories}">
 									<tr>
 										<td>${conceptMappingResultModelView.sourceConcept}</td>
-										<td>${conceptMappingResultModelView.relations}</td>
+										<td>${conceptMappingResultModelView.path}</td>
 										<td>${sensitiveCategory}</td>
 										<td>${conceptMappingResultModelView.targetConcept}</td>
 									</tr>

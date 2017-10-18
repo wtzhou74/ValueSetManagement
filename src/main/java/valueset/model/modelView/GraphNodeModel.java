@@ -3,7 +3,7 @@ package valueset.model.modelView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TreeNodeModel {
+public class GraphNodeModel {
 
 	String parentNode = "";
 	List<String> childNodes = new ArrayList<String>();

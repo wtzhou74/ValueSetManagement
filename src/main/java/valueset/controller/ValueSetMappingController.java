@@ -98,8 +98,10 @@ public class ValueSetMappingController {
 	@PostMapping("/showcConceptMappingResults")
 	public String showConceptMappingResults (HttpServletRequest request) {
 		String conceptCode = request.getParameter("conceptCode");
+		String codeSystem = request.getParameter("terminology");
+		String solution = request.getParameter("radioGroup");
 		
-		List<ConceptMappingResultModelView> conceptMappingResultViews = conceptMappinService.findMappedConceptInVS(conceptCode);
+		List<ConceptMappingResultModelView> conceptMappingResultViews = conceptMappinService.findMappedConceptInVS(conceptCode, codeSystem, solution);
 		request.setAttribute("conceptMappingView", conceptMappingResultViews);
 		request.setAttribute("model", "CONCEPT_MAPPING_RESULTS");
 		return "index";

@@ -7,7 +7,7 @@ public class ConceptMappingResultModelView {
 
 	private String sourceConcept;
 	private String targetConcept;
-	private String relations = "";
+	private String path = "";
 	private List<String> sensitiveCategories = new ArrayList<String>();
 	
 	
@@ -24,11 +24,12 @@ public class ConceptMappingResultModelView {
 	public void setTargetConcept(String targetConcept) {
 		this.targetConcept = targetConcept;
 	}
-	public String getRelations() {
-		return relations;
+	
+	public String getPath() {
+		return path;
 	}
-	public void setRelations(String relations) {
-		this.relations = relations;
+	public void setPath(String path) {
+		this.path = path;
 	}
 	public List<String> getSensitiveCategories() {
 		return sensitiveCategories;

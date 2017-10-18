@@ -28,6 +28,7 @@ import valueset.model.modelView.RelationStatisticsModelView;
 import valueset.model.modelView.SemanticRelationModelView;
 import valueset.rdfModelManage.LoadRdfModel;
 import valueset.rdfModelManage.RdfModelViewUnit;
+import valueset.utils.ConstantUtil;
 
 @Service
 public class JenaBasedSemanticService {
@@ -68,22 +69,31 @@ public class JenaBasedSemanticService {
 		while(rs.hasNext()) {
 
 			QuerySolution soln = rs.nextSolution();
-			RDFNode rdfNode = soln.get("o");
 			String targetConcept = "";
-			if ("".equals(rdfNode.asResource().getLocalName())) {
-				String uri = rdfNode.asResource().getURI();
-				String[] strArray = uri.split("\\/");
-				targetConcept = strArray[strArray.length - 1];
+			//Handle RxNorm
+			if (ConstantUtil.RXNORM.equalsIgnoreCase(terminology)) {
+				RDFNode rdfNode = soln.get("o");	
+				if ("".equals(rdfNode.asResource().getLocalName())) {
+					String uri = rdfNode.asResource().getURI();
+					String[] strArray = uri.split("\\/");
+					targetConcept = strArray[strArray.length - 1];
+				} else {
+					targetConcept = rdfNode.asResource().getLocalName();
+					
+				}
+				targetConcepts.add(targetConcept);
 			} else {
-				targetConcept = rdfNode.asResource().getLocalName();
-				
+				targetConcept = soln.getLiteral("notation").getLexicalForm();
+				targetConcepts.add(targetConcept);
 			}
-			targetConcepts.add(targetConcept);
+			
+			
 		}
 		
 		return targetConcepts;
 		
     }
+    
 	/**
 	 * Query direct semantic relation by giving terminology and concept code
 	 * @param terminology
@@ -368,6 +378,7 @@ public class JenaBasedSemanticService {
 		Map<String, String> nameSpaceMap = new HashMap<String, String>();
 		nameSpaceMap.put("skos", "http://www.w3.org/2004/02/skos/core#");
 		nameSpaceMap.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+		nameSpaceMap.put("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 		nameSpaceMap.put("RxNorm", "http://purl.bioontology.org/ontology/RXNORM/");
 		pss.setNsPrefixes(nameSpaceMap);
 	}
