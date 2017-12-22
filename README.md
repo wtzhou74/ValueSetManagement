@@ -1,20 +1,20 @@
-# ValueSetManagement
+# Identification of Sensitive Category
 =====================================
-+ This is a SpringBoot application about how to deal with the issues on the code mappings from Knowledge base, e.g. RxNorm, SNOMED-CT, to value set
-provided by SAMHSA.
++ This is a SpringBoot application on the identification of sensitive cateogry of concepts from RxNorm, LOINC, ICD9/10-CM, CPT, HCPCS.
 + All the original RDF models will not be tracked, so, you should download them from bioportal (http://bioportal.bioontology.org/ontologies) 
-+ In addition, the application also provides functionalities about accessing code system, concept code, sensitive category and value set as well, all of them are about Mental Health and Substance Abuse
-+ Database accessing extends CrudRepository
-+ RDF Models (RxNorm, ICD10CM Ontology, etc.) were downloaded from bioportal
-+ SPARQL was used to query Knowledge Base
-+ ValueSet provided by SAMHSA were stored in MySQL database
++ The primary functionalities including:
++ [Code Systems Query]
++ [Concept Code Query]
++ [Sensitive Categories]
++ [ValueSet Query]
++ [Term Type Query]
++ [Concept Sensitive Cateogry Query]
++ [Term Sensitive Category Query]
 
 ======================================
-+ Jena verison should be 3.0.0, or RDFDataMgr.loadModel() will get errors
-+ The RDF models should be placed on src/main/resources/terminolgies, and the file name is like RXNORM.ttl, ICD10CM.ttl.
+Note:
 
-#Updates
-==========
-+ Concept Mapping based on BFS
-+ Please start from Class: ConceptMappingService.java
-+ Script of the table Termtypes-relationship will be committed later.
++ MySQL, please refer to configuration file - application.properties
++ SQL Scripts can be found under the directory /src/main/resource/scripts (Will be provided later)
++ ttl files. please download them from bioportal (http://bioportal.bioontology.org/ontologies)
++ Please replace API key found in ConstantUtil.ttl with your own one that can be achieved from your UMLS account.
