@@ -108,12 +108,6 @@ public class ValueSetService {
 		//find concept code by id
 		ConceptCode conceptCode = conceptCodeRepo.findOne(conceptCodeID);
 		List<ValueSet> valueSets = conceptCode.getValueSets();
-		//The results of following code are get all value set of a specific cagegory
-		/*for (ValueSet valueSet : valueSets) {
-			if (!categories.contains(valueSet.getValueSetCategory().getCode())) {
-				valueSetCategories.add(valueSet.getValueSetCategory());
-			}
-		}*/
 		
 		//TODO re-write the following code to support one concept code refers to multiply categories
 		ValueSetModelView valueSetModelView = new ValueSetModelView();

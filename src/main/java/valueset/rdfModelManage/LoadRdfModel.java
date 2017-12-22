@@ -40,9 +40,19 @@ public class LoadRdfModel implements CommandLineRunner{
 		Model rxnormModel = RDFDataMgr.loadModel("terminologies/RXNORM.ttl");// load RxNorm RDF Model in Memory
 		Model icd10Model = RDFDataMgr.loadModel("terminologies/ICD10CM.ttl");// load ICD-10 RDF Model in Memory
 		//Model icd9Model = RDFDataMgr.loadModel("terminologies/ICD9CM.ttl");// load ICD-9 RDF Model in Memory
+		//Model cptModel = RDFDataMgr.loadModel("terminologies/CPT.ttl");
+		//Model snomedModel = RDFDataMgr.loadModel("terminologies/SNOMEDCT.ttl");
+		//Model hcpcsModel = RDFDataMgr.loadModel("terminologies/HCPCS.ttl");
+		Model loincModel = RDFDataMgr.loadModel("terminologies/LOINC.ttl");
+		
 		modelMap.put(ConstantUtil.RXNORM, rxnormModel);
 		modelMap.put(ConstantUtil.ICD10CM, icd10Model);
+		//modelMap.put(ConstantUtil.CPT, cptModel);
 		//modelMap.put(ConstantUtil.ICD9CM, icd9Model);
+		//modelMap.put(ConstantUtil.SNOMED_CT, snomedModel);
+		//modelMap.put(ConstantUtil.HCPCS, hcpcsModel);
+		modelMap.put(ConstantUtil.LOINC, loincModel);
+		
 		//validateModel(rxnormModel);//validate model	
 		
 	}

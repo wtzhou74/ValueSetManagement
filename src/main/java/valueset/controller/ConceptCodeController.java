@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import valueset.model.dbModel.CodeSystem;
 import valueset.model.modelView.ConceptCodeModelView;
+import valueset.model.wsModel.SearchResult;
 import valueset.service.CodeSystemService;
+import valueset.service.ConceptCodeQueryService;
 import valueset.service.ConceptCodeService;
 import valueset.service.ConceptMappingService;
 
@@ -31,6 +33,8 @@ public class ConceptCodeController {
 	private ConceptCodeService conceptCodeService;
 	@Autowired
 	private ConceptMappingService conceptMappinService;
+	@Autowired
+	private ConceptCodeQueryService conceptCodeQueryService;
 	
 	@GetMapping("/")
 	public String home(HttpServletRequest request) {
@@ -88,6 +92,26 @@ public class ConceptCodeController {
 	public String test() {
 		//conceptCodeService.findSensitiveOfSpecifiedConcept("152318");
 		conceptMappinService.findMappedConceptInVS("1040032", "RxNorm", "1");
+		return "index";
+	}
+	
+	@GetMapping("/retrieve-concept-code")
+	public String queryTermType(HttpServletRequest request) {
+		//conceptCodeService.findSensitiveOfSpecifiedConcept("152318");
+		request.setAttribute("model", "QUERY_CONCEPT_CODE");
+		//conceptMappinService.findMappedConceptInVS("1040032");
+		return "index";
+	}
+	
+	@PostMapping("/showConceptCodeResults")
+	public String retrieveConceptCode (HttpServletRequest request) {
+		String term = request.getParameter("term");
+		String rsab = request.getParameter("rsab");
+		List<SearchResult> searchResultView = conceptCodeQueryService.retrieveCuis(term, rsab);
+		//conceptCodeQueryService.testSensitiveMedications();
+		
+		request.setAttribute("searchResultView", searchResultView);
+		request.setAttribute("model", "CONCEPT_CODE_QUERY_RESULTS");
 		return "index";
 	}
 }

@@ -9,7 +9,7 @@ public class GraphNodeModel {
 	List<String> childNodes = new ArrayList<String>();
 	String currentNode = "";
 	String relation = "";
-	int currentLevel = 0;
+	int distance = 0;
 	
 	public String getParentNode() {
 		return parentNode;
@@ -17,7 +17,6 @@ public class GraphNodeModel {
 	public void setParentNode(String parentNode) {
 		this.parentNode = parentNode;
 	}
-	
 	public List<String> getChildNodes() {
 		return childNodes;
 	}
@@ -36,11 +35,11 @@ public class GraphNodeModel {
 	public void setCurrentNode(String currentNode) {
 		this.currentNode = currentNode;
 	}
-	public int getCurrentLevel() {
-		return currentLevel;
+	public int getDistance() {
+		return distance;
 	}
-	public void setCurrentLevel(int currentLevel) {
-		this.currentLevel = currentLevel;
+	public void setDistance(int distance) {
+		this.distance = distance;
 	}
 	
 	

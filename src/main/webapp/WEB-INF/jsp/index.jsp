@@ -42,6 +42,7 @@
 					<li><a href="get-related-concept">Related Concepts Query</a></li>
 					<li><a href="query-term_type">Term Type Query</a></li>
 					<li><a href="query-mapped-concept">Concept Mapping</a></li>
+					<li><a href="retrieve-concept-code">Sensitive Category Query of Term</a></li>
 				</ul>				
 			</li>			
 		</ul>
@@ -445,6 +446,10 @@
 								<option>RxNorm</option>
 								<option>ICD10CM</option>
 								<option>ICD9CM</option>
+								<option>CPT</option>
+								<option>SNOMED CT</option>
+								<option>HCPCS</option>
+								<option>LOINC</option>
 							</select>
 						</div>
 					</div>
@@ -486,6 +491,72 @@
 										<td>${conceptMappingResultModelView.targetConcept}</td>
 									</tr>
 								</c:forEach>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'QUERY_CONCEPT_CODE'}">
+			<div class="container text-center">
+				<h3>Sensitive Category Retrieve of Term</h3>
+				<hr>
+				<form class="form-horizontal" method="post" action="showConceptCodeResults">
+					<div class="form-group">
+						<label class="control-label col-md-3">RSAB</label>
+						<div class="col-md-7">
+							<select class="form-control" name= "rsab" id="rsab">
+								<option>All</option>
+								<option>RXNORM</option>
+								<option>ICD10CM</option>
+								<option>ICD9CM</option>
+								<option>CPT</option>
+								<option>SNOMED CT</option>
+								<option>HCPCS</option>
+								<option>LNC</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3">Term</label>
+						<div class="col-md-7">
+							<input type="text" class="form-control" name="term" id="term" value="" />
+						</div>
+					</div>
+					<div>
+						<input type="submit" class="btn btn-primary" value="Search" />
+					</div>
+				</form>
+			</div>
+		</c:when>
+		
+		<c:when test="${model == 'CONCEPT_CODE_QUERY_RESULTS' }">
+			<div class="container">
+				<h3>Sensitive Category Retrieve Results</h3>
+				<hr>
+				<div class="table-responsive">
+					<table class="table table-striped table-bordered table-hover" id="conceptCodeResultTable">
+						<thead>
+							<tr>
+								<th>id</th>
+								<th>cui</th>
+								<th>name</th>
+								<th>source</th>
+								<th>ingredients</th>
+								<th>sensitive category</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="searchResultView" items="${searchResultView}">
+								<tr>
+									<td>${searchResultView.id}</td>
+									<td>${searchResultView.uri}</td>
+									<td>${searchResultView.name}</td>
+									<td>${searchResultView.rootSource}</td>
+									<td>${searchResultView.ingredient}</td>
+									<td>${searchResultView.sensitveCategory}</td>
+								</tr>
 							</c:forEach>
 						</tbody>
 					</table>
@@ -589,6 +660,7 @@
  	       $('#semanticRelationTable').DataTable();
  	      $('#noSpecifiedRelationTable').DataTable();
  	     $('#noRelationTable').DataTable();
+ 	     $('#conceptCodeResultTable').DataTable();
  	   } );
     </script>
 </body>

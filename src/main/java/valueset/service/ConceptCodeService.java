@@ -18,6 +18,7 @@ import valueset.model.modelView.ConceptCodeModelView;
 
 /**
  * Service used to deal with concept code, code system
+ * 
  * @author ZHOU WENTAO
  *
  */
@@ -27,79 +28,76 @@ public class ConceptCodeService {
 
 	private final CodeSystemRepository codeSystemRep;
 	private final ConceptCodeRepository conceptCodeRep;
-	
+
 	public ConceptCodeService(CodeSystemRepository codeSystemRep, ConceptCodeRepository conceptCodeRep) {
 		this.codeSystemRep = codeSystemRep;
 		this.conceptCodeRep = conceptCodeRep;
 	}
-	
+
 	/**
 	 * Find all related concept code by given code system name
+	 * 
 	 * @param parameterName
 	 * @param parameterValue
 	 * @return
 	 */
-	public List<ConceptCodeModelView> findConceptCodeWithTerminology(String parameterName,
-			String parameterValue) {
+	public List<ConceptCodeModelView> findConceptCodeWithTerminology(String parameterName, String parameterValue) {
 		List<ConceptCodeModelView> conceptCodeModels = new ArrayList<ConceptCodeModelView>();
 		List<CodeSystem> codeSystems = new ArrayList<CodeSystem>();
 		if (parameterName.equalsIgnoreCase("codeSystemName")) {
-			//Actually, one terminology corresponding to one code system, so, here, List is not needed
+			// Actually, one terminology corresponding to one code system, so,
+			// here, List is not needed
 			codeSystems = codeSystemRep.findCodeSystemsByName(parameterValue);
 		}
-		
+
 		if (parameterName.equalsIgnoreCase("codeSystemOid")) {
 			codeSystems = codeSystemRep.findCodeSystemsByOid(parameterValue);
 		}
-		
-		
-		if (null != codeSystems
-				&& codeSystems.size() > 0) {
-			for(CodeSystem codeSystem : codeSystems) {
+
+		if (null != codeSystems && codeSystems.size() > 0) {
+			for (CodeSystem codeSystem : codeSystems) {
 				queryDB2GetConceptCodes(codeSystem, conceptCodeModels);
 			}
 		}
 		return conceptCodeModels;
 	}
-	
+
 	/**
 	 * Query DB to get all concept codes with given terminology
+	 * 
 	 * @param codeSystems
 	 * @param conceptCodeModels
 	 */
 	public void queryDB2GetConceptCodes(CodeSystem codeSystem, List<ConceptCodeModelView> conceptCodeModels) {
 		ConceptCodeModelView conceptCodeModel = new ConceptCodeModelView();
 		conceptCodeModel.setCodeSystem(codeSystem);
-		//Need to correct the following code if different code system veriosn should be considered
+		// Need to correct the following code if different code system veriosn
+		// should be considered
 		for (CodeSystemVersion codeSystemVersion : codeSystem.getCodeSystemVersions()) {
-			conceptCodeModel.setConceptCodes((List<ConceptCode>)codeSystemVersion.getConceptCodes());
+			conceptCodeModel.setConceptCodes((List<ConceptCode>) codeSystemVersion.getConceptCodes());
 		}
 		conceptCodeModels.add(conceptCodeModel);
 	}
-	
+
 	/**
 	 * Find Sensitive information for a specified concept code
+	 * 
 	 * @param conceptCode
 	 * @return
 	 */
-	public List<String> findSensitiveOfSpecifiedConcept (String conceptCode) {
-		ConceptCode concept = new ConceptCode ();
-		//One concept could refer to more than one category
+	public List<String> findSensitiveOfSpecifiedConcept(String conceptCode) {
+		ConceptCode concept = new ConceptCode();
+		// One concept could refer to more than one category
 		List<String> sensitiveCategorys = new ArrayList<String>();
 		List<ConceptCode> concepts = new ArrayList<ConceptCode>();
 		concepts = conceptCodeRep.findConceptByConceptCode(conceptCode);
-		//Query it again in case that the code in VS is end up with 0, such as F16.2 is in ICD10, while F16.20 is in VS.
-		//This is not a good solution.
-		if (concepts.isEmpty()) {
-			concepts = conceptCodeRep.findConceptByConceptCode(conceptCode.concat("0"));
-		}
 		if (concepts.isEmpty()) {
 			System.out.println("NO SENSITIVE CATEGORY FOUND IN VS");
 			return sensitiveCategorys;
 		}
-		//Each code refers to one ConceptCode Object
+		// Each code refers to one ConceptCode Object
 		concept = concepts.get(0);
-		
+
 		List<ValueSet> valueSets = concept.getValueSets();
 		for (ValueSet valueSet : valueSets) {
 			ValueSetCategory valueSetCategory = valueSet.getValueSetCategory();
@@ -107,6 +105,5 @@ public class ConceptCodeService {
 		}
 		return sensitiveCategorys;
 	}
-	
-	
+
 }

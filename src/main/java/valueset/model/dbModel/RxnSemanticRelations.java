@@ -20,7 +20,7 @@ import org.springframework.data.annotation.LastModifiedDate;
  *
  */
 @Entity
-@Table(name="semanticrelation", schema="rxnorm2017")
+@Table(name="semanticrelation", schema="pcm")
 public class RxnSemanticRelations implements Serializable{
 
 	@Id
