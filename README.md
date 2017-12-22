@@ -16,4 +16,4 @@ The primary functionalities including:
 + MySQL, please refer to configuration file - application.properties
 + SQL Scripts can be found under the directory /src/main/resource/scripts (Will be provided later)
 + ttl files. please download them from bioportal (http://bioportal.bioontology.org/ontologies)
-+ Please replace API key found in ConstantUtil.ttl with your own one that can be achieved from your UMLS account.
++ Please replace API key found in ConstantUtil.java with your own one that can be achieved from your UMLS account.
