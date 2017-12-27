@@ -31,4 +31,8 @@ public final class ConstantUtil {
 	public static final String APIKEY = "05149cd0-2bff-4639-b7e6-34f52cfb75bb";
 	public static final String VERSION = "";
 	public static final String PARAM_LOINC = "LNC";
+	
+	//DATA SOUCE
+	public static final String TEST_DATA_SOURCE_DB = "DATABASE";
+	public static final String TEST_DATA_SOURCE_EXCEL = "EXCEL";
 }

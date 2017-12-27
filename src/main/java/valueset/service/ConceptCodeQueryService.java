@@ -41,6 +41,8 @@ public class ConceptCodeQueryService {
 	JfcsMedicationRepository jfcsMedicationRepository;
 	@Autowired
 	JfcsLabsRepository jfcsLabsRepository;
+	@Autowired
+	ReadExcelFileService readExcelFileService;
 
 	RestTicketClient restTicketClient = new RestTicketClient(ConstantUtil.APIKEY);
 	private String tgt = restTicketClient.getTgt();
@@ -52,10 +54,12 @@ public class ConceptCodeQueryService {
 		// testSensitiveMedications();
 		// testSensitiveDiagnosis();
 		// getLabs();
-		// testLabs();
+		// testLabs(ConstantUtil.TEST_DATA_SOURCE_EXCEL);
+	    // testSensitiveOfTestDataOfMed();
+		//testSensitiveOfTestDataOfCodes();
 		List<SearchResult> results = new ArrayList<SearchResult>();
 		try {
-			results = SearchTerm(term, rsab);
+			results = SearchConcepts(term, rsab);
 			if (results.size() == 0) {
 				System.out.println("No results for " + term);
 			}
@@ -113,7 +117,7 @@ public class ConceptCodeQueryService {
 
 	}
 
-	public List<SearchResult> SearchTerm(String term, String rsab) throws Exception {
+	public List<SearchResult> SearchConcepts(String term, String rsab) throws Exception {
 
 		String version = ConstantUtil.VERSION.equalsIgnoreCase("") ? "current" : ConstantUtil.VERSION;
 		String paramSabs = rsab.equalsIgnoreCase("All") ? "" : rsab;
@@ -134,7 +138,7 @@ public class ConceptCodeQueryService {
 					// uncomment below to return CUIs that have at least one
 					// non-obsolete/non-suppressible atom that is an exact match
 					// with the search term
-					// .param("searchType","exact") //valid values are
+					//.param("searchType","exact") //valid values are
 					// exact,words, approximate,leftTruncation,rightTruncation,
 					// and normalizedString
 					// uncomment below to return source-asserted identifiers
@@ -163,11 +167,11 @@ public class ConceptCodeQueryService {
 	}
 
 	/**
-	 * Get all terms from test data
+	 * Get all terms from database
 	 * 
 	 * @return
 	 */
-	public Map<String, List<String>> getTerms() {
+	public Map<String, List<String>> getTermsFromDB() {
 		Map<String, List<String>> tests = new HashMap<String, List<String>>();
 		List<JfcsMedication> jfcsMedications = Lists.newArrayList(jfcsMedicationRepository.findAll());
 		List<String> medications = new ArrayList<String>();
@@ -213,7 +217,7 @@ public class ConceptCodeQueryService {
 	}
 
 	public void testSensitiveMedications() {
-		List<String> medications = getTerms().get(ConstantUtil.RXNORM);
+		List<String> medications = getTermsFromDB().get(ConstantUtil.RXNORM);
 		List<String> sensitiveCategory = new ArrayList<String>();
 		for (String medication : medications) {
 			List<SearchResult> searchResults = retrieveCuis(medication, "RXNORM");
@@ -232,7 +236,7 @@ public class ConceptCodeQueryService {
 	}
 
 	public void testSensitiveDiagnosis() {
-		List<String> diagnosis = getTerms().get(ConstantUtil.ICD10CM);
+		List<String> diagnosis = getTermsFromDB().get(ConstantUtil.ICD10CM);
 		Map<String, String> sensitive = new HashMap<String, String>();
 
 		for (String diag : diagnosis) {
@@ -260,15 +264,21 @@ public class ConceptCodeQueryService {
 		return;
 	}
 
-	public void testLabs() {
-		List<String> resultDesc = getLabs();
+	public void testLabs(String source) {
+		List<String> resultDesc = new ArrayList<String>();
+		if (source.equalsIgnoreCase(ConstantUtil.TEST_DATA_SOURCE_DB)) {
+			resultDesc = getLabs();
+		}
+		if (source.equalsIgnoreCase(ConstantUtil.TEST_DATA_SOURCE_EXCEL)) {
+			resultDesc = readExcelFileService.getTermsWithSheetColumnName("Labs (lab_results_obx)", "result_desc", "term_lab");
+		}
 		System.out.println(resultDesc);
 		List<String> noResults = new ArrayList<String>();
 		Map<String, String> sensitiveLab = new HashMap<String, String>();
 		for (String lab : resultDesc) {
 			List<SearchResult> searchResults = new ArrayList<SearchResult>();
 			try {
-				searchResults = SearchTerm(lab, ConstantUtil.PARAM_LOINC);
+				searchResults = SearchConcepts(lab, ConstantUtil.PARAM_LOINC);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -280,13 +290,19 @@ public class ConceptCodeQueryService {
 			for (SearchResult result : searchResults) {
 				List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
 						StringUtils.substringAfterLast(result.getUri(), "/"), ConstantUtil.LOINC, "");
+				boolean sensitiveFlag = false;
 				for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
 					if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
 						break;
 					} else {
 						sensitiveLab.put(lab, conceptMappingResult.getSensitiveCategories().get(0));
+						sensitiveFlag = true;
 					}
 
+				}
+				// break the loop if the first sensitive code is found
+				if (sensitiveFlag) {
+					break;
 				}
 			}
 
@@ -301,5 +317,179 @@ public class ConceptCodeQueryService {
 		}
 
 		return;
+	}
+	
+	//get medication terms from Excel file
+	public void testSensitiveOfTestDataOfMed () {
+		List<String> terms = readExcelFileService.getTermsWithSheetColumnName("Meds", "Medication/Dose", "term_med");
+		Map<String, String> sensitiveTerm = new HashMap<String, String>();
+		List<String> noResultsBef = new ArrayList<String>();
+		List<String> noResults = new ArrayList<String>();
+		List<String> multipleResult = new ArrayList<String>();
+		List<String> singleResult = new ArrayList<String>();
+		for (String term : terms) {
+			List<SearchResult> searchResults = new ArrayList<SearchResult>();
+			try {
+				searchResults = SearchConcepts(term, "RXNORM");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (searchResults.size() <= 0) {
+				noResultsBef.add(term);
+				//Split the term with " ", and select the first word as new term
+				term = term.split(" ")[0];
+				try {
+					searchResults = SearchConcepts(term, "RXNORM");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if (searchResults.size() <= 0) {
+					noResults.add(term);
+				}
+				
+				// break;
+			} else if (searchResults.size() > 1) {
+				multipleResult.add(term);
+			} else if (searchResults.size() == 1) {
+				singleResult.add(term);
+			}
+			boolean sensitiveFlag = false;
+			for (SearchResult result : searchResults) {
+				List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+						StringUtils.substringAfterLast(result.getUri(), "/"), ConstantUtil.RXNORM, ConstantUtil.INGREDIENT_QUERY_OPTION_1);
+				
+				for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
+					if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
+						continue;
+					} else {
+						for (String sensitive : conceptMappingResult.getSensitiveCategories()) {
+							sensitiveTerm.put(term, sensitive);
+						}
+						sensitiveFlag = true;
+					}
+
+				}
+				//Just check the first sensitive term
+				if (sensitiveFlag) {
+					break;
+				}
+			}
+
+		}
+
+		System.out.println("Cannot found corresponding code through UMLS API " + noResults);
+
+		Set<Map.Entry<String, String>> it = sensitiveTerm.entrySet();
+
+		for (Map.Entry<String, String> map : it) {
+			System.out.println("Source Code: " + map.getKey() + "----" + "Sensitive: " + map.getValue());
+		}
+		
+		return;
+	}
+	
+	public void testSensitiveOfTestDataOfCodes () {
+		List<String> codes = readExcelFileService.getTermsWithSheetColumnName("Demo and Dx", "Axis II Prim", "code");
+		Map<String, String> sensitiveTerm = new HashMap<String, String>();
+		for (String code : codes) {
+			
+			List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+					code, ConstantUtil.ICD10CM, "");
+			
+			for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
+				if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
+					continue;
+				} else {
+					for (String sensitive : conceptMappingResult.getSensitiveCategories()) {
+						sensitiveTerm.put(code, sensitive);
+					}
+				}
+
+			}
+			
+
+		}
+
+		Set<Map.Entry<String, String>> it = sensitiveTerm.entrySet();
+
+		for (Map.Entry<String, String> map : it) {
+			System.out.println("Source Code: " + map.getKey() + "----" + "Sensitive: " + map.getValue());
+		}
+		
+		return;
+	}
+	
+	public void getLabTermsFromExcel () {
+
+		List<String> terms = readExcelFileService.getTermsWithSheetColumnName("Meds", "Medication/Dose", "term_med");
+		Map<String, String> sensitiveTerm = new HashMap<String, String>();
+		List<String> noResultsBef = new ArrayList<String>();
+		List<String> noResults = new ArrayList<String>();
+		List<String> multipleResult = new ArrayList<String>();
+		List<String> singleResult = new ArrayList<String>();
+		for (String term : terms) {
+			List<SearchResult> searchResults = new ArrayList<SearchResult>();
+			try {
+				searchResults = SearchConcepts(term, "RXNORM");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (searchResults.size() <= 0) {
+				noResultsBef.add(term);
+				//Split the term with " ", and select the first word as new term
+				term = term.split(" ")[0];
+				try {
+					searchResults = SearchConcepts(term, "RXNORM");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if (searchResults.size() <= 0) {
+					noResults.add(term);
+				}
+				
+				// break;
+			} else if (searchResults.size() > 1) {
+				multipleResult.add(term);
+			} else if (searchResults.size() == 1) {
+				singleResult.add(term);
+			}
+			boolean sensitiveFlag = false;
+			for (SearchResult result : searchResults) {
+				List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+						StringUtils.substringAfterLast(result.getUri(), "/"), ConstantUtil.RXNORM, ConstantUtil.INGREDIENT_QUERY_OPTION_1);
+				
+				for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
+					if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
+						continue;
+					} else {
+						for (String sensitive : conceptMappingResult.getSensitiveCategories()) {
+							sensitiveTerm.put(term, sensitive);
+						}
+						sensitiveFlag = true;
+					}
+
+				}
+				//Just check the first sensitive term
+				if (sensitiveFlag) {
+					break;
+				}
+			}
+
+		}
+
+		System.out.println("Cannot found corresponding code through UMLS API " + noResults);
+
+		Set<Map.Entry<String, String>> it = sensitiveTerm.entrySet();
+
+		for (Map.Entry<String, String> map : it) {
+			System.out.println("Source Code: " + map.getKey() + "----" + "Sensitive: " + map.getValue());
+		}
+		
+		return;
+	
 	}
 }
