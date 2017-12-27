@@ -10,10 +10,12 @@ The primary functionalities including:
 + [Term Type Query]
 + [Concept Sensitive Cateogry Query]
 + [Term Sensitive Category Query]
++ [Test Test Data from Database]
++ [Test Test Data from Excel]
 
 ## Note:
 
 + MySQL, please refer to configuration file - application.properties
-+ SQL Scripts can be found under the directory /src/main/resource/scripts (Will be provided later)
++ SQL Scripts can be found in Release section and place them under the directory /src/main/resource/scripts
 + ttl files. please download them from bioportal (http://bioportal.bioontology.org/ontologies)
 + Please replace API key found in ConstantUtil.java with your own one that can be achieved from your UMLS account.
