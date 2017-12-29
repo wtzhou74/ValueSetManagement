@@ -450,6 +450,7 @@
 								<option>SNOMED CT</option>
 								<option>HCPCS</option>
 								<option>LOINC</option>
+								<option>SVC</option>
 							</select>
 						</div>
 					</div>

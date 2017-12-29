@@ -56,7 +56,7 @@ public class ConceptCodeQueryService {
 		// getLabs();
 		// testLabs(ConstantUtil.TEST_DATA_SOURCE_EXCEL);
 	    // testSensitiveOfTestDataOfMed();
-		//testSensitiveOfTestDataOfCodes();
+		testSensitiveOfTestDataOfCodes(true);
 		List<SearchResult> results = new ArrayList<SearchResult>();
 		try {
 			results = SearchConcepts(term, rsab);
@@ -270,13 +270,14 @@ public class ConceptCodeQueryService {
 			resultDesc = getLabs();
 		}
 		if (source.equalsIgnoreCase(ConstantUtil.TEST_DATA_SOURCE_EXCEL)) {
-			resultDesc = readExcelFileService.getTermsWithSheetColumnName("Labs (lab_results_obx)", "result_desc", "term_lab");
+			resultDesc = readExcelFileService.getTermsWithSheetColumnName("Labs (lab_results_obx)", "loinc_code", "term_lab");
 		}
 		System.out.println(resultDesc);
 		List<String> noResults = new ArrayList<String>();
 		Map<String, String> sensitiveLab = new HashMap<String, String>();
 		for (String lab : resultDesc) {
-			List<SearchResult> searchResults = new ArrayList<SearchResult>();
+			// JFCS 12-18-2017 test data provides LOINC code, so, we do not need to call UMLS REST
+			/*List<SearchResult> searchResults = new ArrayList<SearchResult>();
 			try {
 				searchResults = SearchConcepts(lab, ConstantUtil.PARAM_LOINC);
 			} catch (Exception e) {
@@ -286,25 +287,24 @@ public class ConceptCodeQueryService {
 			if (searchResults.size() <= 0) {
 				noResults.add(lab);
 				// break;
-			}
-			for (SearchResult result : searchResults) {
-				List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
-						StringUtils.substringAfterLast(result.getUri(), "/"), ConstantUtil.LOINC, "");
-				boolean sensitiveFlag = false;
-				for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
-					if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
-						break;
-					} else {
-						sensitiveLab.put(lab, conceptMappingResult.getSensitiveCategories().get(0));
-						sensitiveFlag = true;
-					}
-
-				}
-				// break the loop if the first sensitive code is found
-				if (sensitiveFlag) {
+			}*/
+			//for (SearchResult result : searchResults) {
+			List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+					lab, ConstantUtil.LOINC, "");
+			boolean sensitiveFlag = false;
+			for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
+				if (conceptMappingResult.getSensitiveCategories().size() <= 0) {
 					break;
+				} else {
+					sensitiveLab.put(lab, conceptMappingResult.getSensitiveCategories().get(0));
 				}
+
 			}
+			// break the loop if the first sensitive code is found
+			/*if (sensitiveFlag) {
+				break;
+			}*/
+			//}
 
 		}
 
@@ -321,7 +321,7 @@ public class ConceptCodeQueryService {
 	
 	//get medication terms from Excel file
 	public void testSensitiveOfTestDataOfMed () {
-		List<String> terms = readExcelFileService.getTermsWithSheetColumnName("Meds", "Medication/Dose", "term_med");
+		List<String> terms = readExcelFileService.getTermsWithSheetColumnName("Medications", "medication_name", "term_med");
 		Map<String, String> sensitiveTerm = new HashMap<String, String>();
 		List<String> noResultsBef = new ArrayList<String>();
 		List<String> noResults = new ArrayList<String>();
@@ -390,13 +390,37 @@ public class ConceptCodeQueryService {
 		return;
 	}
 	
-	public void testSensitiveOfTestDataOfCodes () {
-		List<String> codes = readExcelFileService.getTermsWithSheetColumnName("Demo and Dx", "Axis II Prim", "code");
+	/**
+	 * Test the codes extracted from test data
+	 * Update the SHEET NAME and COLUMN NAME for specific data structure (spreadsheet)
+	 * 
+	 */
+	public void testSensitiveOfTestDataOfCodes (boolean isSvcCode) {
+		List<String> codes = readExcelFileService.getTermsWithSheetColumnName("Services", "cpt4_code_id", "code");
 		Map<String, String> sensitiveTerm = new HashMap<String, String>();
 		for (String code : codes) {
-			
-			List<ConceptMappingResultModelView> conceptMappingResults = conceptMappingService.findMappedConceptInVS(
-					code, ConstantUtil.ICD10CM, "");
+			List<ConceptMappingResultModelView> conceptMappingResults;
+			// if the codes are SVC, e.g. T1016HN53
+			if (isSvcCode) {
+				String cpt = code.substring(0, 5);
+				String modifier = "";
+				if (code.length() >= 7) {
+					modifier = code.substring(5,7);
+				}
+				//The code is sensitive if modifier is HF or HQ
+				//TODO updated
+				if (ConstantUtil.MODIFIER_HF.equalsIgnoreCase(modifier)
+						|| ConstantUtil.MODIFIER_HQ.equalsIgnoreCase(modifier)) {
+					sensitiveTerm.put(code, "ETH");//Substance Abuse
+					continue;
+				} else {
+					conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+							cpt, ConstantUtil.CPT, "");
+				}
+			} else {
+				conceptMappingResults = conceptMappingService.findMappedConceptInVS(
+						code, ConstantUtil.ICD10CM, "");
+			}
 			
 			for (ConceptMappingResultModelView conceptMappingResult : conceptMappingResults) {
 				if (conceptMappingResult.getSensitiveCategories().size() <= 0) {

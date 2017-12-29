@@ -65,7 +65,8 @@ public class ConceptMappingService {
 		// ICD10CM
 		if (ConstantUtil.ICD10CM.equalsIgnoreCase(codeSystem) || ConstantUtil.ICD9CM.equalsIgnoreCase(codeSystem)
 				|| ConstantUtil.CPT.equals(codeSystem) || ConstantUtil.SNOMED_CT.equals(codeSystem)
-				|| ConstantUtil.HCPCS.equals(codeSystem) || ConstantUtil.LOINC.equals(codeSystem)) {
+				|| ConstantUtil.HCPCS.equals(codeSystem) || ConstantUtil.LOINC.equals(codeSystem)
+				|| ConstantUtil.SVC.equalsIgnoreCase(codeSystem)) {
 			ConceptMappingResultModelView conceptMappingResultView = iCDcmConceptService
 					.identifySenCategoryOfICDConcept(sourceConcept, codeSystem);
 			conceptMappingResultViews.add(conceptMappingResultView);

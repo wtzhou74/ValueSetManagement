@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -39,7 +40,7 @@ public class ReadExcelFileService {
         try {
 
         	//Hard coded the file directory
-            FileInputStream excelFile = new FileInputStream(new File(PIR_12_18_2017_FILE_NAME));
+            FileInputStream excelFile = new FileInputStream(new File(JFCS_12_18_2017_FILE_NAME));
             Workbook workbook = new XSSFWorkbook(excelFile);
             int numberOfSheets = workbook.getNumberOfSheets();
             for (int i = 0; i < numberOfSheets; i++) {
@@ -108,7 +109,7 @@ public class ReadExcelFileService {
                 	String cellValue = currentCell.getStringCellValue();
                 	if (null != cellValue && !cellValue.equals("")) {
                 		//cellValue.replaceAll("Tab", "");
-                		terms.add(cellValue.replaceAll("Tab|Cap|ER|SR|sustained-release", ""));
+                		terms.add(cellValue.replaceAll("c", ""));
                 	} else {
                 		terms.add(cellValue);
                 	}
@@ -145,7 +146,6 @@ public class ReadExcelFileService {
     			if (cell.getColumnIndex() != targetColumnIndex) {
     				continue;
     			} else {
-    				
     				String cellValue = "";
     				if (cell.getCellTypeEnum() == CellType.STRING) {
     					//in case the situation: F10.10 Alcohol use disorder, Mild
@@ -154,6 +154,11 @@ public class ReadExcelFileService {
     				}
     				if (cell.getCellTypeEnum() == CellType.NUMERIC) {
     					cellValue = String.valueOf(cell.getNumericCellValue());
+    					//for svc code, some of cell type is numberic, and the point added automatically should be removed
+    					if (columnName.equalsIgnoreCase("cpt4_code_id")) {
+    						cellValue = StringUtils.substringBefore(cellValue, ".");
+    					}
+    					
     				}
     				//remove " " before and after the code
     				if (!codes.contains(cellValue.replaceAll(" ", ""))) {
@@ -183,8 +188,12 @@ public class ReadExcelFileService {
     			} else {
     				String cellValue = "";
     				if (cell.getCellTypeEnum() == CellType.STRING) {
-    					//in case the situation: F10.10 Alcohol use disorder, Mild
-    					cellValue = cell.getStringCellValue().replaceAll("Absolute|Non-Dialysis|Qualitative", "");
+    					//in case the situation: F10.10 Alcohol use disorder, Mild   					
+    					if (cell.getStringCellValue().equalsIgnoreCase("NULL")) {
+    						continue;
+    					}
+    					//cellValue = cell.getStringCellValue().replaceAll("Absolute|Non-Dialysis|Qualitative", "");
+    					cellValue = cell.getStringCellValue().replaceAll(" ", ""); //the value is code, then remove all " "
     					if (!terms.contains(cellValue)) {
     						terms.add(cellValue);
     					}	

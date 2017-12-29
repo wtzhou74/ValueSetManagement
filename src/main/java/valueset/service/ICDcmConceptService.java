@@ -39,6 +39,19 @@ public class ICDcmConceptService {
 		if (sensitiveCategories.size() > 0) {
 			return assembleViewResult(cui, "", sensitiveCategories, cui);
 		}
+		
+		//SVC code, e.g. H0004HQ53
+		if (ConstantUtil.SVC.equalsIgnoreCase(codeSystem)) {
+			if (cui.length() >= 7
+					&& (ConstantUtil.MODIFIER_HF.equalsIgnoreCase(cui.substring(5, 7))
+							|| ConstantUtil.MODIFIER_HQ.equalsIgnoreCase(cui.substring(5, 7)))) {
+				sensitiveCategories.add("ETH");
+				return assembleViewResult(cui, "", sensitiveCategories, cui);
+			} else {
+				cui = cui.substring(0, 5);//Get first 5 characters as CPT code
+				codeSystem = ConstantUtil.CPT;
+			}
+		}
 
 		// Check which level of given CUI by quering HCPCS ontolgoy which only
 		// contains codes of Level II

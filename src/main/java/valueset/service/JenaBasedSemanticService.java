@@ -94,7 +94,7 @@ public class JenaBasedSemanticService {
 						System.out.println(targetConcept);
 					}
 				} else {
-					if (!soln.getLiteral("notation").getLexicalForm().isEmpty()) {
+					if (null != soln.getLiteral("notation")) {
 						targetConcept = soln.getLiteral("notation").getLexicalForm();
 					} else {
 						targetConcept = soln.getLiteral("cui").getLexicalForm();
