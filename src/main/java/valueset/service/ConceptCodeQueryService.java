@@ -45,6 +45,7 @@ public class ConceptCodeQueryService {
 	ReadExcelFileService readExcelFileService;
 
 	RestTicketClient restTicketClient = new RestTicketClient(ConstantUtil.APIKEY);
+	// Valid in 8 hours, it should be updated after each 8 hours.
 	private String tgt = restTicketClient.getTgt();
 
 	public List<SearchResult> retrieveCuis(String term, String rsab) {
@@ -56,7 +57,7 @@ public class ConceptCodeQueryService {
 		// getLabs();
 		// testLabs(ConstantUtil.TEST_DATA_SOURCE_EXCEL);
 	    // testSensitiveOfTestDataOfMed();
-		testSensitiveOfTestDataOfCodes(true);
+		//testSensitiveOfTestDataOfCodes(true);
 		List<SearchResult> results = new ArrayList<SearchResult>();
 		try {
 			results = SearchConcepts(term, rsab);
