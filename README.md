@@ -18,5 +18,6 @@ The primary functionalities including:
 + MySQL, please refer to configuration file - application.properties
 + SQL Scripts can be found in Release section and place them under the directory /src/main/resources/scripts
 + The test data in Excel from JFCS and PIR are placed in /resources/testdata
-+ ttl files. please download them from bioportal (http://bioportal.bioontology.org/ontologies)
++ All required OWL files can be found in Release section. 
 + Please replace API key found in ConstantUtil.java with your own one that can be achieved from your UMLS account.
+
